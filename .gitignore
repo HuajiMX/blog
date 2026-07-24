@@ -1,0 +1,33 @@
+# 敏感配置
+wp-config.php
+wp-config-local.php
+.env
+
+# 上传、缓存资源
+wp-content/uploads/
+wp-content/cache/
+wp-content/tmp/
+
+# 日志
+*.log
+debug.log
+
+# 备份压缩包
+*.zip
+*.tar
+*.tar.gz
+backup/
+backups/
+
+# IDE、系统垃圾
+.vscode/
+.idea/
+node_modules/
+.DS_Store
+Thumbs.db
+
+# 环境配置文件
+.htaccess
+readme.html
+license.txt
+
