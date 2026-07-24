@@ -1,0 +1,96 @@
+# Translation of Plugins - Comment Reply Email Notification - Stable (latest release) in Chinese (China)
+# This file is distributed under the same license as the Plugins - Comment Reply Email Notification - Stable (latest release) package.
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2021-05-02 08:04:07+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: GlotPress/4.0.3\n"
+"Language: zh_CN\n"
+"Project-Id-Version: Plugins - Comment Reply Email Notification - Stable (latest release)\n"
+
+#. Plugin URI of the plugin
+#: cren_plugin.php
+msgid "https://wordpress.org/plugins/comment-reply-email-notification/"
+msgstr "https://cn.wordpress.org/plugins/comment-reply-email-notification/"
+
+#. Author of the plugin
+#: cren_plugin.php
+msgid "Arno Welzel"
+msgstr "Arno Welzel"
+
+#. Author URI of the plugin
+#: cren_plugin.php
+msgid "http://arnowelzel.de"
+msgstr "http://arnowelzel.de"
+
+#. Plugin Name of the plugin
+#: cren_plugin.php classes/CommentReplyEmailNotification.php:40
+#: classes/CommentReplyEmailNotification.php:41
+#: classes/CommentReplyEmailNotification.php:47
+#: classes/CommentReplyEmailNotification.php:97
+msgid "Comment Reply Email Notification"
+msgstr "评论回复电邮通知"
+
+#. Description of the plugin
+#: cren_plugin.php
+msgid "Sends an email notification to the comment author when someone replies to his comment."
+msgstr "当有人对评论者的评论进行回复时，向其发送电子邮件通知。"
+
+#: classes/CommentReplyEmailNotification.php:171
+#: classes/CommentReplyEmailNotification.php:177
+#: classes/CommentReplyEmailNotification.php:249
+#: classes/CommentReplyEmailNotification.php:251
+msgid "New reply to your comment"
+msgstr "您的评论有了新的回复"
+
+#: classes/CommentReplyEmailNotification.php:370
+msgid "Your subscription for this comment has been cancelled."
+msgstr "您对该评论的订阅已被取消。"
+
+#: classes/CommentReplyEmailNotification.php:402
+#: classes/CommentReplyEmailNotification.php:430
+msgid "Notify me via e-mail if anyone answers my comment."
+msgstr "如果有人回复我的评论，请通过电子邮件通知我。"
+
+#: classes/CommentReplyEmailNotification.php:512
+msgid "I consent to %s collecting and storing the data I submit in this form."
+msgstr "我同意%s收集和储存我通过此表单提交的数据。"
+
+#: classes/CommentReplyEmailNotification.php:516
+msgid "Privacy Policy"
+msgstr "隐私政策"
+
+#: classes/CommentReplyEmailNotification.php:562
+msgid "Error: you must agree with the terms to send a comment. Hit the back button on your web browser and resubmit your comment if you agree with the terms."
+msgstr "错误：您必须同意这些条款才能发送评论。如果您同意这些条款，请点击网络浏览器的后退按钮，重新提交您的评论。"
+
+#: templates/cren/notification.php:1
+msgid "Hi %s"
+msgstr "%s，您好"
+
+#: templates/cren/notification.php:3
+msgid "%s has replied to your comment on"
+msgstr "%s回复了您的评论"
+
+#: templates/cren/notification.php:9
+msgid "Click here to reply"
+msgstr "点击这里回复"
+
+#: templates/cren/notification.php:11
+msgid "Click here to stop receiving these messages"
+msgstr "点击这里停止接收这些消息"
+
+#: classes/CommentReplyEmailNotification.php:150
+msgid "Check the subscription checkbox by default"
+msgstr "默认勾选订阅复选框"
+
+#: classes/CommentReplyEmailNotification.php:154
+msgid "Display the GDPR checkbox"
+msgstr "显示GDPR复选框"
+
+#: classes/CommentReplyEmailNotification.php:158
+msgid "Privacy Policy URL"
+msgstr "隐私政策网址"

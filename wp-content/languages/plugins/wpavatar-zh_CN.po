@@ -1,0 +1,37 @@
+# Translation of Plugins - WPAvatar - Stable (latest release) in Chinese (China)
+# This file is distributed under the same license as the Plugins - WPAvatar - Stable (latest release) package.
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2023-05-24 05:19:22+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: GlotPress/4.0.1\n"
+"Language: zh_CN\n"
+"Project-Id-Version: Plugins - WPAvatar - Stable (latest release)\n"
+
+#. Author URI of the plugin
+#: wpavatar.php
+msgid "https://wpfanyi.com/"
+msgstr "https://wpfanyi.com/"
+
+#. Author of the plugin
+#: wpavatar.php
+msgid "WPfanyi"
+msgstr "文派翻译"
+
+#. Description of the plugin
+#: wpavatar.php
+msgid "Replace Gravatar with Cravatar, a perfect replacement of Gravatar in China."
+msgstr "替换 Gravatar 头像为 Cravatar 头像，这是 Gravatar 在中国的完美替代方案。"
+
+#. Plugin URI of the plugin
+#: wpavatar.php
+msgid "https://wpavatar.com/download"
+msgstr "https://wpavatar.com/download"
+
+#. Plugin Name of the plugin
+#: wpavatar.php includes/multisite.php:166
+msgid "WPAvatar"
+msgstr "文派头像"

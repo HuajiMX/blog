@@ -1,0 +1,7 @@
+# Prevent directory listing
+Options -Indexes
+# Cache images for one week
+<IfModule mod_expires.c>
+ExpiresActive On
+ExpiresByType image/jpeg "access plus 1 week"
+</IfModule>

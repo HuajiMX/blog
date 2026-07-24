@@ -1,0 +1,75 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "mamaduka/bookmark-card",
+	"title": "Bookmark Card",
+	"category": "embed",
+	"icon": "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='black' viewBox='0 0 24 24'><path d='M0 0h24v24H0z' fill='none'/><path d='M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z'/></svg>",
+	"description": "Turn any URL into a beautiful preview card.",
+	"keywords": [ "bookmark", "card" ],
+	"textdomain": "bookmark-card",
+	"attributes": {
+		"url": {
+			"type": "string",
+			"default": ""
+		},
+		"title": {
+			"type": "string",
+			"source": "text",
+			"selector": ".bookmark-card__title",
+			"default": ""
+		},
+		"description": {
+			"type": "string",
+			"source": "text",
+			"selector": ".bookmark-card__description",
+			"default": ""
+		},
+		"image": {
+			"type": "string",
+			"source": "attribute",
+			"selector": ".bookmark-card__image img",
+			"attribute": "src",
+			"default": ""
+		},
+		"icon": {
+			"type": "string",
+			"source": "attribute",
+			"selector": ".bookmark_card__meta-icon",
+			"attribute": "src",
+			"default": ""
+		},
+		"publisher": {
+			"type": "string",
+			"source": "text",
+			"selector": ".bookmark_card__meta-publisher",
+			"default": ""
+		},
+		"mediaPosition": {
+			"type": "string",
+			"default": "right"
+		},
+		"linkTarget": {
+			"type": "string"
+		},
+		"rel": {
+			"type": "string",
+			"source": "attribute",
+			"selector": "figure > a",
+			"attribute": "rel"
+		}
+	},
+	"supports": {
+		"html": false,
+		"reusable": false,
+		"__experimentalBorder": {
+			"radius": true,
+			"__experimentalDefaultControls": {
+				"radius": true
+			}
+		}
+	},
+	"editorScript": "file:./build/index.js",
+	"editorStyle": "file:./build/index.css",
+	"style": "file:./build/style-index.css"
+}

@@ -1,0 +1,63 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "simple-link-embed/card",
+    "version": "1.0.4",
+    "title": "Simple Link Embed",
+    "category": "embed",
+    "description": "Automatically fetches OGP data from a URL and displays it as a blog card",
+    "keywords": ["link", "card", "ogp", "blog card", "link preview"],
+    "textdomain": "simple-link-embed",
+    "attributes": {
+        "url": {
+            "type": "string",
+            "default": ""
+        },
+        "ogpData": {
+            "type": "object",
+            "default": null
+        },
+        "isLoading": {
+            "type": "boolean",
+            "default": false
+        },
+        "error": {
+            "type": "string",
+            "default": ""
+        },
+        "imagePosition": {
+            "type": "string",
+            "default": "left",
+            "enum": ["left", "right", "hide"]
+        },
+        "showSiteName": {
+            "type": "boolean",
+            "default": true
+        },
+        "showDescription": {
+            "type": "boolean",
+            "default": true
+        },
+        "openInNewTab": {
+            "type": "boolean",
+            "default": true
+        }
+    },
+    "supports": {
+        "align": ["wide", "full"],
+        "spacing": {
+            "margin": true,
+            "padding": true
+        },
+        "html": false,
+        "multiple": true,
+        "reorder": true
+    },
+    "editorStyle": "file:./editor.css",
+    "style": "file:./style.css",
+    "example": {
+        "attributes": {
+            "url": "https://example.com"
+        }
+    }
+}

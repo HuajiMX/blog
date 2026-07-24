@@ -1,0 +1,88 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WPAvatar\n"
+"POT-Creation-Date: 2023-04-16 23:45+0800\n"
+"PO-Revision-Date: 2023-04-16 23:47+0800\n"
+"Last-Translator: 薇晓朵 <support@weixiaoduo.com>\n"
+"Language-Team: 薇曉朵 <support@weixiaoduo.com>\n"
+"Language: zh_TW\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Poedit 3.1.1\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-Flags-xgettext: --add-comments=translators:\n"
+"X-Poedit-WPHeader: wpavatar.php\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-KeywordsList: __;_e;_n:1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;esc_attr__;"
+"esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c;"
+"_n_noop:1,2;_nx_noop:3c,1,2;__ngettext_noop:1,2\n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Poedit-SearchPathExcluded-0: *.min.js\n"
+
+#: includes/cravatar.php:44
+msgid "Cravatar Logo"
+msgstr "頭像"
+
+#: includes/cravatar.php:59
+msgid "You can update your profile picture at Cravatar.cn"
+msgstr "您可以在 Cravatar.cn 更新您的個人資料圖片"
+
+#: includes/cravatar.php:72
+msgid "Avatar Settings"
+msgstr "頭像設定"
+
+#: includes/cravatar.php:73
+msgid "Avatar"
+msgstr "頭像"
+
+#: includes/cravatar.php:86
+msgid "WordPress Avatar Settings"
+msgstr "文派頭像設定"
+
+#: includes/cravatar.php:87
+msgid ""
+"Cravatar is the perfect alternative to Gravatar in China, you can update "
+"your avatar at"
+msgstr ""
+"Cravatar（初認頭像）是中國 Gravatar 的完美替代方案，您可以在官網更新您的頭"
+"像"
+
+#: includes/cravatar.php:95
+msgid "Enable Cravatar"
+msgstr "啟用Cravatar"
+
+#: includes/cravatar.php:98
+msgid "Yes"
+msgstr "是"
+
+#: includes/cravatar.php:99
+msgid "No"
+msgstr "否"
+
+#: includes/cravatar.php:104
+msgid "Save Changes"
+msgstr "儲存更改"
+
+#. Plugin Name of the plugin/theme
+msgid "WPAvatar"
+msgstr "文派頭像"
+
+#. Plugin URI of the plugin/theme
+msgid "https://wpavatar.com/download"
+msgstr "https://wpavatar.com/download"
+
+#. Description of the plugin/theme
+msgid ""
+"Replace Gravatar with Cravatar, a perfect replacement of Gravatar in China."
+msgstr ""
+"替換 Gravatar 頭像為 Cravatar 頭像，這是 Gravatar 在中國的完美替代方案。"
+
+#. Author of the plugin/theme
+msgid "WPfanyi"
+msgstr "文派翻譯"
+
+#. Author URI of the plugin/theme
+msgid "https://wpfanyi.com/"
+msgstr "https://wpfanyi.com/"

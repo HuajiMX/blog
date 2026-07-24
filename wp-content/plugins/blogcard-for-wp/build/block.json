@@ -1,0 +1,93 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "su/blogcard",
+  "version": "2.3.3",
+  "title": "ブログカード",
+  "category": "su-blocks",
+  "icon": "admin-links",
+  "description": "A block plugin that automatically generates a beautiful blog card just by pasting a URL.",
+  "keywords": [
+    "blog",
+    "card",
+    "url",
+    "link"
+  ],
+  "textdomain": "wpbc",
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "render": "file:./render.php",
+  "supports": {
+    "html": false,
+    "align": [
+      "left",
+      "center",
+      "right",
+      "wide",
+      "full"
+    ],
+    "spacing": {
+      "margin": true,
+      "padding": true
+    }
+  },
+  "attributes": {
+    "url": {
+      "type": "string",
+      "default": ""
+    },
+    "target": {
+      "type": "string",
+      "default": "_blank"
+    },
+    "noopener": {
+      "type": "boolean",
+      "default": true
+    },
+    "nofollow": {
+      "type": "boolean",
+      "default": false
+    },
+    "noreferrer": {
+      "type": "boolean",
+      "default": false
+    },
+    "sponsored": {
+      "type": "boolean",
+      "default": false
+    },
+    "ugc": {
+      "type": "boolean",
+      "default": false
+    },
+    "showThumbnail": {
+      "type": "boolean",
+      "default": false
+    },
+    "title": {
+      "type": "string",
+      "default": ""
+    },
+    "description": {
+      "type": "string",
+      "default": ""
+    },
+    "thumbnailUrl": {
+      "type": "string",
+      "default": ""
+    },
+    "thumbnailId": {
+      "type": "number",
+      "default": 0
+    },
+    "favicon": {
+      "type": "string",
+      "default": ""
+    },
+    "isManual": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

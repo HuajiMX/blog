@@ -1,0 +1,2 @@
+<?php
+return ['x-generator'=>'GlotPress/4.0.1','translation-revision-date'=>'2023-05-24 05:19:22+0000','plural-forms'=>'nplurals=1; plural=0;','project-id-version'=>'Plugins - WPAvatar - Stable (latest release)','language'=>'zh_CN','messages'=>['https://wpfanyi.com/'=>'https://wpfanyi.com/','WPfanyi'=>'文派翻译','Replace Gravatar with Cravatar, a perfect replacement of Gravatar in China.'=>'替换 Gravatar 头像为 Cravatar 头像，这是 Gravatar 在中国的完美替代方案。','https://wpavatar.com/download'=>'https://wpavatar.com/download','WPAvatar'=>'文派头像']];

@@ -1,0 +1,66 @@
+=== Bookmark Card ===
+Contributors: mamaduka
+Tags: link preview, bookmark, embed, url preview, open graph
+Requires at least: 6.9
+Tested up to: 7.0
+Stable tag: 2.3.0
+Requires PHP: 7.4
+License: GPLv2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+
+Turn any URL into a beautiful link preview card with title, description, and image, just like sharing on social media.
+
+== Description ==
+
+Bookmark Card turns any external URL into a rich link preview card showing the page title, description, and thumbnail image, just like links shared on Facebook or Twitter. Add it as a block, paste a link, and get an embed-style preview card automatically.
+
+Choose between default (vertical) and horizontal card styles, customize border radius, control media position, and open links in a new tab.
+
+== Frequently Asked Questions ==
+
+= Want to report a bug? =
+
+Report issues, or collaborate, on [Github](https://github.com/Mamaduka/bookmark-card/).
+
+== Screenshot ==
+
+1. Default card style.
+2. Horizontal card style.
+
+== Changelog ==
+
+= 2.3.0 - 2026-06-28 =
+* Update the Block API version to 3.
+* Update the minimum required WordPress version to 6.9.
+* Update the minimum required PHP version to 7.4.
+* Fix the missing `alt` attribute on the card image.
+* Fix the missing "media on the left" class in the saved markup.
+
+= 2.2.1 - 2024-07-16 =
+* Update the minimum required WordPress version to 6.4.
+
+= 2.2.0 - 2022-11-26 =
+* Add a setting to open links in a new tab.
+* Update the minimum required WordPress version to 6.0.
+* Remove the URLs Details API compatibility layer.
+* Only display media position controls for horizontal block style.
+
+= 2.1.1 - 2022-05-22 =
+* Avoid React warning when inserting the block.
+* Don't apply border styles to the placeholder.
+
+= 2.1.0 - 2022-02-12 =
+* Adds support for custom border-radius.
+* Stacks horizontal Cards on smaller screens.
+* Adds option to change media position for horizontal Cards.
+* Fixes loading state styles when using with Gutenberg plugin.
+
+= 2.0.0 - 2022-02-12 =
+* Bumped minimum required WordPress version to 5.8.
+* The plugin now uses the new "URLs Details" API shipped with WP 5.9.
+* Upgraded to the Block API v2.
+* Refactored the block code into functional components.
+* Styling tweaks.
+
+= 1.0.0 - 2020-11-22 =
+* Initial release.

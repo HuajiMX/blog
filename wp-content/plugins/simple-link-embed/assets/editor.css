@@ -1,0 +1,477 @@
+/**
+ * Simple Link Embed - エディタースタイル
+ *
+ * @package Slemb
+ */
+
+.wp-block-simple-link-embed {
+    position: relative;
+}
+
+/**
+ * OGP更新ボタンのアイコンサイズ強制
+ */
+.slemb-editor-wrapper .components-button svg,
+.slemb-editor-wrapper .components-button .dashicon {
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    min-height: 16px !important;
+}
+
+.slemb-editor-wrapper .components-button .dashicon {
+    font-size: 16px !important;
+}
+
+/**
+ * エディターラッパー
+ */
+.slemb-editor-wrapper {
+    background-color: #F9F9F9;
+    border: 1px solid #EEE;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+/**
+ * エラー通知の独自配色
+ */
+.slemb-notice-error.components-notice {
+    background-color: #FEF2F2;
+    border-left-color: #FCA5A5;
+    color: #991B1B;
+}
+
+.slemb-notice-error.components-notice .components-notice__content {
+    color: #991B1B;
+}
+
+.slemb-editor-controls {
+    margin-bottom: 1rem;
+}
+
+.slemb-control-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.slemb-control-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: #666;
+}
+
+.slemb-plugin-name {
+    color: #DDD;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.slemb-editor-controls .components-base-control {
+    width: 100%;
+}
+
+.slemb-editor-controls .components-text-control__input {
+    width: 100%;
+}
+
+/**
+ * エディタープレビュー
+ */
+.slemb-editor-preview {
+    border-radius: 8px;
+}
+
+/**
+ * カードスタイル（エディター用）
+ */
+.slemb-editor-preview .slemb-card {
+    --slemb-card-bg: #ffffff;
+    --slemb-card-border: #dddddd;
+    --slemb-card-border-hover: #999999;
+    --slemb-title-color: #000000;
+    --slemb-desc-color: #333333;
+    --slemb-site-color: #666666;
+}
+
+/**
+ * プレースホルダー
+ */
+.slemb-editor-preview.slemb-placeholder {
+    min-height: 160px;
+    background-color: #f5f5f5;
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.slemb-editor-preview.slemb-placeholder p {
+    margin: 0;
+    color: #999;
+    font-size: 0.8125rem;
+}
+
+/**
+ * ローディング
+ */
+.slemb-editor-preview.slemb-loading {
+    min-height: 160px;
+    background-color: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.slemb-editor-preview.slemb-loading .components-spinner {
+    margin: 0;
+}
+
+.slemb-editor-preview.slemb-loading p {
+    margin: 0;
+    color: #999;
+    font-size: 0.8125rem;
+    letter-spacing: 0.05em;
+}
+
+/**
+ * エラー表示
+ */
+.slemb-editor-preview.slemb-error {
+    min-height: 120px;
+    background-color: #fef2f2;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem;
+    box-sizing: border-box;
+}
+
+.slemb-editor-preview.slemb-error p {
+    margin: 0;
+    color: #991b1b;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+}
+
+/**
+ * エラーノティス
+ */
+.slemb-editor-preview .components-notice {
+    margin: 0;
+}
+
+/**
+ * ブロックツールバーのスタイル調整
+ */
+.block-editor-block-preview__content .slemb-card {
+    pointer-events: none;
+}
+
+/**
+ * ドラッグプレビュー用のスタイル
+ */
+.block-editor-block-preview__content .slemb-editor-controls {
+    display: none !important;
+}
+
+.block-editor-block-preview__content .slemb-editor-wrapper {
+    padding: 0;
+}
+
+.block-editor-block-preview__content .slemb-editor-preview {
+    border-radius: 8px;
+}
+
+/**
+ * プレビュー内のカードスタイル（フロントエンドと共通化）
+ */
+.block-editor-block-preview__content .slemb-card,
+.slemb-editor-preview .slemb-card {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    background-color: var(--slemb-card-bg, #ffffff);
+    border: 1px solid var(--slemb-card-border, #dddddd);
+    border-radius: 8px;
+    overflow: hidden;
+    text-decoration: none;
+    max-width: 100%;
+}
+
+/**
+ * 画像右配置時のスタイル
+ */
+.slemb-editor-preview .slemb-card--image-right,
+.block-editor-block-preview__content .slemb-card--image-right {
+    flex-direction: row-reverse;
+}
+
+.block-editor-block-preview__content .slemb-card__image,
+.slemb-editor-preview .slemb-card__image {
+    flex: 0 0 220px;
+    width: 220px;
+    height: auto;
+    max-height: 160px;
+    align-self: stretch;
+    overflow: hidden;
+    background-color: #f5f5f5;
+    border-right: 1px solid #F3F3F3;
+    border-radius: 8px 0 0 8px;
+}
+
+.slemb-editor-preview .slemb-card--image-right .slemb-card__image,
+.block-editor-block-preview__content .slemb-card--image-right .slemb-card__image {
+    border-right: none;
+    border-left: 1px solid #F3F3F3;
+    border-radius: 0 8px 8px 0;
+}
+
+.block-editor-block-preview__content .slemb-card__image img,
+.slemb-editor-preview .slemb-card__image img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    border-radius: 0 !important;
+}
+
+.block-editor-block-preview__content .slemb-card__content,
+.slemb-editor-preview .slemb-card__content {
+    flex: 1;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.block-editor-block-preview__content .slemb-card__title,
+.slemb-editor-preview .slemb-card__title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: bold;
+    line-height: 1.6;
+    color: var(--slemb-title-color, #000000);
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.block-editor-block-preview__content .slemb-card__description,
+.slemb-editor-preview .slemb-card__description {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1.7;
+    color: #999999;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.block-editor-block-preview__content .slemb-card__site,
+.slemb-editor-preview .slemb-card__site {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    line-height: 1;
+    font-size: 0.75rem;
+    color: var(--slemb-site-color, #666666);
+}
+
+.block-editor-block-preview__content .slemb-card__favicon,
+.slemb-editor-preview .slemb-card__favicon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.block-editor-block-preview__content .slemb-card__domain,
+.slemb-editor-preview .slemb-card__domain {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .block-editor-block-preview__content .slemb-card,
+    .slemb-editor-preview .slemb-card {
+        border: 1px solid var(--slemb-card-border, #dddddd);
+    }
+
+    .block-editor-block-preview__content .slemb-card__image,
+    .slemb-editor-preview .slemb-card__image,
+    .block-editor-block-preview__content .slemb-card--image-right .slemb-card__image,
+    .slemb-editor-preview .slemb-card--image-right .slemb-card__image {
+        border-right: none;
+        border-left: none;
+        border-bottom: 1px solid #F3F3F3;
+        border-radius: 8px 8px 0 0;
+    }
+}
+
+/**
+ * インスペクターのスタイル
+ */
+.slemb-inspector-row {
+    margin-bottom: 1rem;
+}
+
+.slemb-inspector-row:last-child {
+    margin-bottom: 0;
+}
+
+/**
+ * ワイド/フル幅対応
+ */
+.wp-block-simple-link-embed.alignwide,
+.wp-block-simple-link-embed.alignfull {
+    width: 100%;
+}
+
+.wp-block-simple-link-embed.alignwide .slemb-card,
+.wp-block-simple-link-embed.alignfull .slemb-card {
+    max-width: 100%;
+}
+
+/**
+ * エディターの暗いテーマ対応（明確に白背景を指定）
+ */
+.block-editor-editor-skeleton__body .slemb-editor-preview.slemb-placeholder {
+    background-color: #f5f5f5;
+    border-color: #ddd;
+}
+
+.block-editor-editor-skeleton__body .slemb-editor-preview.slemb-placeholder p {
+    color: #999;
+}
+
+.block-editor-editor-skeleton__body .slemb-editor-preview.slemb-loading {
+    background-color: #f9f9f9;
+    border-color: #e0e0e0;
+}
+
+.block-editor-editor-skeleton__body .slemb-editor-preview.slemb-loading p {
+    color: #999;
+}
+
+
+/**
+ * URL入力トリガー（モーダル起動）
+ */
+.slemb-url-input-trigger .components-text-control__input,
+.slemb-url-input-trigger.components-text-control__input,
+.slemb-url-input-trigger input {
+    cursor: pointer;
+    border: 1px solid #ddd !important;
+    height: 40px !important;
+    padding: 6px 10px !important;
+}
+
+.slemb-url-input-trigger .components-text-control__input:focus,
+.slemb-url-input-trigger.components-text-control__input:focus,
+.slemb-url-input-trigger input:focus {
+    border-color: #ddd !important;
+    box-shadow: 0 0 0 0.5px #ddd !important;
+}
+
+.slemb-url-input-trigger .components-input-control__container,
+.slemb-url-input-trigger .components-input-control__backdrop {
+    border-color: #ddd !important;
+    box-shadow: inset 0 0 0 1px #ddd !important;
+    min-height: 40px !important;
+}
+
+/**
+ * LinkControl モーダル内スタイル
+ */
+/* Modal className is attached to .components-modal__frame itself. */
+.components-modal__frame.slemb-link-modal {
+    width: 720px !important;
+    min-width: 720px !important;
+    max-width: 720px !important;
+    overflow: hidden;
+}
+
+@media (max-width: 760px) {
+    .components-modal__frame.slemb-link-modal {
+        width: calc(100vw - 24px) !important;
+        min-width: calc(100vw - 24px) !important;
+        max-width: calc(100vw - 24px) !important;
+    }
+}
+
+.slemb-link-modal .components-modal__content {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+}
+
+.slemb-link-modal .block-editor-link-control {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.slemb-link-modal .block-editor-link-control__field {
+    margin: 0 0 8px;
+}
+
+.slemb-link-modal .block-editor-link-control__search-results-wrapper {
+    padding: 0 0 8px;
+}
+
+.slemb-link-modal .block-editor-link-control__search-results-wrapper::before,
+.slemb-link-modal .block-editor-link-control__search-results-wrapper::after {
+    display: none;
+}
+
+.slemb-link-modal .block-editor-link-control__search-results {
+    margin-top: 0;
+    padding: 0;
+    max-height: 42vh;
+    overflow: auto;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.slemb-link-modal .block-editor-link-control__search-item {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0 0 8px;
+    padding: 10px 12px;
+    border: 1px solid #e8e8e8;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+.slemb-link-modal .components-menu-item__item,
+.slemb-link-modal .components-truncate,
+.slemb-link-modal .block-editor-link-control__search-item {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    max-width: 100%;
+}
+
+.slemb-link-modal .components-menu-group,
+.slemb-link-modal .components-menu-item,
+.slemb-link-modal .components-button {
+    max-width: 100%;
+    box-sizing: border-box;
+}
