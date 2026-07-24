@@ -397,10 +397,12 @@ $(document).ready(function () {
                     checkskinSecter();
                 }
                 if (tagid == "dark-bg") {
-                    addComment.I("content").classList.add('notransition');
-                    addComment.I("content").style.backgroundColor = "#fff";
-                    addComment.I("content").offsetHeight;
-                    addComment.I("content").classList.remove('notransition');
+                    var _content = addComment.I("content");
+                    if (!_content) return;
+                    _content.classList.add('notransition');
+                    _content.style.backgroundColor = "#fff";
+                    _content.offsetHeight;
+                    _content.classList.remove('notransition');
                     $("html").css("background", "#31363b");
                     $("body").addClass("dark");
                     setCookie("dark", "1", 0.33);
@@ -410,7 +412,8 @@ $(document).ready(function () {
                     setCookie("dark", "0", 0.33);
                     setCookie("bgImgSetting", tagid, 30);
                     setTimeout(function () {
-                        addComment.I("content").style.backgroundColor = "rgba(255, 255, 255, 0.8)";
+                        var _c = addComment.I("content");
+                        if (_c) _c.style.backgroundColor = "rgba(255, 255, 255, 0.8)";
                     }, 1000);
                 }
                 switch (tagid) {
@@ -552,6 +555,7 @@ timeSeriesReload();
 function coverVideo() {
     var video = addComment.I("coverVideo");
     var btn = addComment.I("coverVideo-btn");
+    if (!video || !btn) return;
 
     if (video.paused) {
         video.play();
@@ -571,6 +575,7 @@ function coverVideo() {
 function killCoverVideo() {
     var video = addComment.I("coverVideo");
     var btn = addComment.I("coverVideo-btn");
+    if (!video || !btn) return;
 
     if (video.paused) {
         //console.info('none:killCoverVideo()');
@@ -585,6 +590,7 @@ function killCoverVideo() {
 
 function loadHls(){
     var video = addComment.I('coverVideo');
+    if (!video) return;
     var video_src = $('#coverVideo').attr('data-src');
     if (Hls.isSupported()) {
         var hls = new Hls();
@@ -758,7 +764,7 @@ function grin(tag, type, before, after) {
     } else {
         tag = ' :' + tag + ': ';
     }
-    if (addComment.I('comment') && addComment.I('comment').type == 'textarea') {
+    if (typeof addComment !== 'undefined' && typeof addComment.I === 'function' && addComment.I('comment') && addComment.I('comment').type == 'textarea') {
         myField = addComment.I('comment');
     } else {
         return false;
@@ -1452,8 +1458,9 @@ var home = location.href,
                     var QueryStorage = [];
                     search_a(Poi.api + "sakura/v1/cache_search/json?_wpnonce=" + Poi.nonce);
 
-                    var otxt = addComment.I("search-input"),
-                        list = addComment.I("PostlistBox"),
+                    var otxt = (typeof addComment.I === 'function') ? addComment.I("search-input") : document.getElementById("search-input"),
+                        list = (typeof addComment.I === 'function') ? addComment.I("PostlistBox") : document.getElementById("PostlistBox");
+                    if (!otxt || !list) return;
                         Record = list.innerHTML,
                         searchFlag = null;
                     otxt.oninput = function () {
@@ -1566,7 +1573,7 @@ var home = location.href,
                                     break
                             }
                         }
-                        w && (y = y + G + "文章" + E + w + D), u && (y = y + G + "页面" + E + u + D), r && (y = y + G + "分类" + E + r + D), p && (y = y + G + "标签" + E + p + D), F && (y = y + G + "评论" + E + F + D), s = addComment.I("PostlistBox"), s.innerHTML = y
+                        w && (y = y + G + "文章" + E + w + D), u && (y = y + G + "页面" + E + u + D), r && (y = y + G + "分类" + E + r + D), p && (y = y + G + "标签" + E + p + D), F && (y = y + G + "评论" + E + F + D), s = (typeof addComment.I === 'function') ? addComment.I("PostlistBox") : document.getElementById("PostlistBox"), s && (s.innerHTML = y)
                     }
                 }
             });
@@ -1613,7 +1620,7 @@ var home = location.href,
                 var page_next = $('#pagination a').attr("href");
                 var load_key = addComment.I("add_post_time");
                 if (page_next != undefined && load_key) {
-                    var load_time = addComment.I("add_post_time").title;
+                    var load_time = load_key.title;
                     if (load_time != "233") {
                         console.log("%c 自动加载时倒计时 %c", "background:#9a9da2; color:#ffffff; border-radius:4px;", "", "", load_time);
                         load_post_timer = setTimeout(function () {
@@ -1715,8 +1722,8 @@ var home = location.href,
                 });
                 return false;
             });
-            addComment = {
-                moveForm: function (commId, parentId, respondId) {
+            // Extend addComment instead of replacing it, to survive WP comment-reply.js overwrite
+            addComment.moveForm = function (commId, parentId, respondId) {
                     var t = this,
                         div, comm = t.I(commId),
                         respond = t.I(respondId),
@@ -1753,16 +1760,16 @@ var home = location.href,
                         t.I('comment').focus();
                     } catch (e) {}
                     return false;
-                },
-                I: function (e) {
+                };
+            addComment.I = function (e) {
                     return document.getElementById(e);
-                },
-                clearButterbar: function (e) {
+                };
+            addComment.clearButterbar = function (e) {
                     if (jQuery(".butterBar").length > 0) {
                         jQuery(".butterBar").remove();
                     }
-                },
-                createButterbar: function (message, showtime) {
+                };
+            addComment.createButterbar = function (message, showtime) {
                     var t = this;
                     t.clearButterbar();
                     jQuery("body").append('<div class="butterBar butterBar--center"><p class="butterBar-message">' + message + '</p></div>');
@@ -1771,8 +1778,23 @@ var home = location.href,
                     } else {
                         setTimeout("jQuery('.butterBar').remove()", 6000);
                     }
+                };
+            // Safeguard: Re-apply theme methods if WP comment-reply.js overwrites addComment later
+            var _ensureAddComment = function () {
+                if (typeof addComment === 'undefined' || typeof addComment.I !== 'function') {
+                    addComment.I = function (e) { return document.getElementById(e); };
+                    addComment.clearButterbar = function (e) { if (jQuery(".butterBar").length > 0) { jQuery(".butterBar").remove(); } };
+                    addComment.createButterbar = function (message, showtime) {
+                        if (jQuery(".butterBar").length > 0) { jQuery(".butterBar").remove(); }
+                        jQuery("body").append('<div class="butterBar butterBar--center"><p class="butterBar-message">' + message + '</p></div>');
+                        var t = showtime > 0 ? showtime : 6000;
+                        setTimeout(function () { jQuery('.butterBar').remove(); }, t);
+                    };
                 }
             };
+            setTimeout(_ensureAddComment, 200);
+            setTimeout(_ensureAddComment, 800);
+            setTimeout(_ensureAddComment, 2000);
         },
         XCP: function () {
             $body = (window.opera) ? (document.compatMode == "CSS1Compat" ? $('html') : $('body')) : $('html,body');
@@ -1967,7 +1989,7 @@ if ((isWebkit || isOpera || isIe) && document.getElementById && window.addEventL
         if (!(/^[A-z0-9_-]+$/.test(id))) {
             return;
         }
-        element = addComment.I(id);
+        element = (typeof addComment.I === 'function') ? addComment.I(id) : document.getElementById(id);
         if (element) {
             if (!(/^(?:a|select|input|button|textarea)$/i.test(element.tagName))) {
                 element.tabIndex = -1;
