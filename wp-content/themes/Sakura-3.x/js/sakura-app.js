@@ -397,7 +397,7 @@ $(document).ready(function () {
                     checkskinSecter();
                 }
                 if (tagid == "dark-bg") {
-                    var _content = addComment.I("content");
+                    var _content = (typeof addComment.I === 'function') ? addComment.I("content") : document.getElementById("content");
                     if (!_content) return;
                     _content.classList.add('notransition');
                     _content.style.backgroundColor = "#fff";
@@ -412,7 +412,7 @@ $(document).ready(function () {
                     setCookie("dark", "0", 0.33);
                     setCookie("bgImgSetting", tagid, 30);
                     setTimeout(function () {
-                        var _c = addComment.I("content");
+                        var _c = (typeof addComment.I === 'function') ? addComment.I("content") : document.getElementById("content");
                         if (_c) _c.style.backgroundColor = "rgba(255, 255, 255, 0.8)";
                     }, 1000);
                 }
@@ -553,8 +553,8 @@ timeSeriesReload();
 
 /*视频feature*/
 function coverVideo() {
-    var video = addComment.I("coverVideo");
-    var btn = addComment.I("coverVideo-btn");
+    var video = (typeof addComment.I === 'function') ? addComment.I("coverVideo") : document.getElementById("coverVideo");
+    var btn = (typeof addComment.I === 'function') ? addComment.I("coverVideo-btn") : document.getElementById("coverVideo-btn");
     if (!video || !btn) return;
 
     if (video.paused) {
@@ -573,8 +573,8 @@ function coverVideo() {
 }
 
 function killCoverVideo() {
-    var video = addComment.I("coverVideo");
-    var btn = addComment.I("coverVideo-btn");
+    var video = (typeof addComment.I === 'function') ? addComment.I("coverVideo") : document.getElementById("coverVideo");
+    var btn = (typeof addComment.I === 'function') ? addComment.I("coverVideo-btn") : document.getElementById("coverVideo-btn");
     if (!video || !btn) return;
 
     if (video.paused) {
@@ -589,7 +589,7 @@ function killCoverVideo() {
 }
 
 function loadHls(){
-    var video = addComment.I('coverVideo');
+    var video = (typeof addComment.I === 'function') ? addComment.I('coverVideo') : document.getElementById('coverVideo');
     if (!video) return;
     var video_src = $('#coverVideo').attr('data-src');
     if (Hls.isSupported()) {
@@ -727,8 +727,8 @@ POWERMODE.shake = false;
 document.body.addEventListener('input', POWERMODE);
 
 function motionSwitch(ele) {
-    var motionEles = [".bili", ".menhera", ".tieba"];
-    for (var i in motionEles) {
+    var motionEles = [".bili", ".menhera", ".tieba", ".qiusyan"];
+    for (var i = 0; i < motionEles.length; i++) {
         $(motionEles[i] + '-bar').removeClass("on-hover");
         $(motionEles[i] + '-container').css("display", "none");
     }
@@ -764,9 +764,12 @@ function grin(tag, type, before, after) {
     } else {
         tag = ' :' + tag + ': ';
     }
-    if (typeof addComment !== 'undefined' && typeof addComment.I === 'function' && addComment.I('comment') && addComment.I('comment').type == 'textarea') {
+    if (typeof addComment !== 'undefined' && typeof addComment.I === 'function') {
         myField = addComment.I('comment');
     } else {
+        myField = document.getElementById('comment');
+    }
+    if (!myField || myField.type !== 'textarea') {
         return false;
     }
     if (document.selection) {
@@ -1618,7 +1621,7 @@ var home = location.href,
             var intersectionObserver = new IntersectionObserver(function (entries) {
                 if (entries[0].intersectionRatio <= 0) return;
                 var page_next = $('#pagination a').attr("href");
-                var load_key = addComment.I("add_post_time");
+                var load_key = (typeof addComment.I === 'function') ? addComment.I("add_post_time") : document.getElementById("add_post_time");
                 if (page_next != undefined && load_key) {
                     var load_time = load_key.title;
                     if (load_time != "233") {
@@ -1676,21 +1679,27 @@ var home = location.href,
                     url: Poi.ajaxurl,
                     data: jQuery(this).serialize() + "&action=ajax_comment",
                     type: jQuery(this).attr('method'),
-                    beforeSend: addComment.createButterbar("提交中(Commiting)...."),
+                    beforeSend: function() {
+                        if (typeof addComment !== 'undefined' && typeof addComment.createButterbar === 'function') {
+                            addComment.createButterbar("提交中(Commiting)....");
+                        }
+                    },
                     error: function (request) {
-                        var t = addComment;
-                        t.createButterbar(request.responseText);
+                        if (typeof addComment !== 'undefined' && typeof addComment.createButterbar === 'function') {
+                            addComment.createButterbar(request.responseText);
+                        }
                     },
                     success: function (data) {
                         jQuery('textarea').each(function () {
                             this.value = ''
                         });
+                        var getEl = (typeof addComment !== 'undefined' && typeof addComment.I === 'function') ? function(id) { return addComment.I(id); } : function(id) { return document.getElementById(id); };
                         var t = addComment,
-                            cancel = t.I('cancel-comment-reply-link'),
-                            temp = t.I('wp-temp-form-div'),
-                            respond = t.I(t.respondId),
-                            post = t.I('comment_post_ID').value,
-                            parent = t.I('comment_parent').value;
+                            cancel = getEl('cancel-comment-reply-link'),
+                            temp = getEl('wp-temp-form-div'),
+                            respond = getEl(t.respondId),
+                            post = getEl('comment_post_ID').value,
+                            parent = getEl('comment_parent').value;
                         if (parent != '0') {
                             jQuery('#respond').before('<ol class="children">' + data + '</ol>');
                         } else if (!jQuery('.' + __list).length) {
@@ -1713,7 +1722,7 @@ var home = location.href,
                         clean_upload_images();
                         cancel.style.display = 'none';
                         cancel.onclick = null;
-                        t.I('comment_parent').value = '0';
+                        getEl('comment_parent').value = '0';
                         if (temp && respond) {
                             temp.parentNode.insertBefore(respond, temp);
                             temp.parentNode.removeChild(temp)
@@ -1792,9 +1801,9 @@ var home = location.href,
                     };
                 }
             };
-            setTimeout(_ensureAddComment, 200);
-            setTimeout(_ensureAddComment, 800);
-            setTimeout(_ensureAddComment, 2000);
+            // Run immediately and then periodically to catch late-loading comment-reply.js
+            _ensureAddComment();
+            setInterval(_ensureAddComment, 1000);
         },
         XCP: function () {
             $body = (window.opera) ? (document.compatMode == "CSS1Compat" ? $('html') : $('body')) : $('html,body');

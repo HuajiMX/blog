@@ -176,18 +176,9 @@ add_action('after_setup_theme', 'akina_content_width', 0);
  */
 function sakura_scripts()
 {
-    if (akina_option('jsdelivr_cdn_test')) {
-        wp_enqueue_script('js_lib', get_template_directory_uri() . '/cdn/js/lib.js', array(), SAKURA_VERSION . akina_option('cookie_version', ''), true);
-    } else {
-        wp_enqueue_script('js_lib', 'https://cdn.jsdelivr.net/gh/mashirozx/Sakura@' . SAKURA_VERSION . '/cdn/js/lib.min.js', array(), SAKURA_VERSION, true);
-    }
-    if (akina_option('app_no_jsdelivr_cdn')) {
-        wp_enqueue_style('saukra_css', get_stylesheet_uri(), array(), SAKURA_VERSION);
-        wp_enqueue_script('app', get_template_directory_uri() . '/js/sakura-app.js', array(), SAKURA_VERSION, true);
-    } else {
-        wp_enqueue_style('saukra_css', 'https://cdn.jsdelivr.net/gh/mashirozx/Sakura@' . SAKURA_VERSION . '/style.min.css', array(), SAKURA_VERSION);
-        wp_enqueue_script('app', 'https://cdn.jsdelivr.net/gh/mashirozx/Sakura@' . SAKURA_VERSION . '/js/sakura-app.min.js', array(), SAKURA_VERSION, true);
-    }
+    wp_enqueue_script('js_lib', get_template_directory_uri() . '/cdn/js/lib.js', array(), SAKURA_VERSION . '.' . filemtime(get_template_directory() . '/cdn/js/lib.js'), true);
+    wp_enqueue_style('saukra_css', get_stylesheet_uri(), array(), SAKURA_VERSION . '.' . filemtime(get_template_directory() . '/style.css'));
+    wp_enqueue_script('app', get_template_directory_uri() . '/js/sakura-app.js', array(), SAKURA_VERSION . '.' . filemtime(get_template_directory() . '/js/sakura-app.js'), true);
     //wp_enqueue_script('github_card', 'https://cdn.jsdelivr.net/github-cards/latest/widget.js', array(), SAKURA_VERSION, true);
 
     if (is_singular() && comments_open() && get_option('thread_comments')) {
@@ -221,6 +212,30 @@ function sakura_scripts()
     ));
 }
 add_action('wp_enqueue_scripts', 'sakura_scripts');
+
+/**
+ * Safeguard: Ensure addComment.I never breaks even if comment-reply.js overwrites it.
+ */
+function sakura_addcomment_safeguard() {
+    if (is_singular() && comments_open()) {
+        echo '<script>
+(function() {
+    var _origGetEl = document.getElementById.bind(document);
+    var _patch = function() {
+        if (typeof addComment === "undefined" || typeof addComment.I !== "function") {
+            if (typeof addComment === "undefined") {
+                window.addComment = {};
+            }
+            addComment.I = function(id) { return document.getElementById(id); };
+        }
+    };
+    _patch();
+    setInterval(_patch, 800);
+})();
+</script>';
+    }
+}
+add_action('wp_footer', 'sakura_addcomment_safeguard', 999);
 
 /**
  * load .php.
@@ -1082,7 +1097,7 @@ add_filter('comment_text', 'comment_picture_support');
 add_filter('smilies_src', 'custom_smilies_src', 1, 10);
 function custom_smilies_src($img_src, $img, $siteurl)
 {
-    return 'https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/images/smilies/' . $img;
+    return '/cdn/smilies/tieba/' . $img;
 }
 // 简单遍历系统表情库，今后应考虑标识表情包名——使用增加的扩展名，同时保留原有拓展名
 // 还有一个思路是根据表情调用路径来判定<-- 此法最好！
@@ -1093,7 +1108,7 @@ function push_smilies()
     foreach ($wpsmiliestrans as $k => $v) {
         $Sname = str_replace(":", "", $k);
         $Svalue = $v;
-        $return_smiles = $return_smiles . '<span title="' . $Sname . '" onclick="grin(' . "'" . $Sname . "'" . ')"><img src="https://cdn.jsdelivr.net/gh/moezx/cdn@3.1.9/img/Sakura/images/smilies/' . $Svalue . '" /></span>';
+        $return_smiles = $return_smiles . '<span title="' . $Sname . '" onclick="grin(' . "'" . $Sname . "'" . ')"><img src="/cdn/smilies/tieba/' . $Svalue . '" /></span>';
     }
     return $return_smiles;
 }
@@ -1142,6 +1157,66 @@ function smilies_reset()
     );
 }
 smilies_reset();
+
+// 作者你的代码写得太烂了吧...呜呜呜
+// BEGIN: 以下是 HuajiMC 写的代码，以示区分
+
+$qiusyan_smiliestrans = array();
+function qiusyan_smilies_init() {
+    global $qiusyan_smiliestrans;
+    $qiusyan_smiliestrans = array(
+        ':-kelian-:' => [
+            'name' => 'kelian',
+            'type' => 'emoji',
+            'file' => 'kelian.gif',
+        ],
+        ':-youyu-:' => [
+            'name' => 'youyu',
+            'type' => 'meme',
+            'file' => 'youyu.gif',
+        ],
+        ':-ye-:' => [
+            'name' => 'ye',
+            'type' => 'meme',
+            'file' => 'ye.gif',
+        ],
+    );
+}
+qiusyan_smilies_init();
+
+function qiusyan_smilies_get_height($type) {
+    return $type == 'emoji' ? '30px' : '80px';
+}
+
+function push_qiusyan_smilies() {
+    global $qiusyan_smiliestrans;
+    $return_smiles = '';
+    foreach($qiusyan_smiliestrans as $code => $data) {
+        $type = $data['type'];
+        $file = $data['file'];
+        $name = $data['name'];
+        $return_smiles = $return_smiles . '<span title="' . $name . '" onclick="grin(' . "'" . $code . "'" . ', \'custom\', \':-\', \'-:\')"><img src="/cdn/qiusyan/' . $file . '" style="height: ' . qiusyan_smilies_get_height($type) . '; margin: 0 10px;" /></span>';
+    }
+    return $return_smiles;
+}
+
+function qiusyan_smilies_filter($content)
+{
+    global $qiusyan_smiliestrans;
+    
+    foreach($qiusyan_smiliestrans as $code => $data) {
+        $content = str_replace(':-' . $code . "-:", 
+            '<span class="emotion-inline">' .
+            '    <img src="/cdn/smilies/qiusyan/' . $data['file'] . '" class="img" style="height: ' . qiusyan_smilies_get_height($data['type']) . ';display: ' . ($data['type'] == 'emoji' ? 'inline-' : '') . 'block;vertical-align: bottom;' . ($data['type'] == 'meme' ? 'margin: 5px;' : '') . '" />' .
+            '</span>', $content);
+    }
+
+    return $content;
+}
+add_filter('the_content', 'qiusyan_smilies_filter'); //替换文章关键词
+add_filter('comment_text', 'qiusyan_smilies_filter'); //替换评论关键词
+
+// END
 
 function push_emoji_panel()
 {
@@ -1224,14 +1299,14 @@ function push_bili_smilies()
         $img_size = getimagesize($smiles_path . $name[$i] . ".png");
         $img_height = $img_size["1"];
         // 选择面版
-        $return_smiles = $return_smiles . '<span class="emotion-secter emotion-item emotion-select-parent" onclick="grin(' . "'" . $name[$i] . "'" . ',type = \'Math\')" style="background-image: url(https://cdn.jsdelivr.net/gh/moezx/cdn@2.9.4/img/bili/hd/ic_emoji_' . $name[$i] . '.png);"><div class="img emotion-select-child" style="background-image: url(https://cdn.jsdelivr.net/gh/moezx/cdn@2.9.4/img/bili/' . $name[$i] . '.png);
+        $return_smiles = $return_smiles . '<span class="emotion-secter emotion-item emotion-select-parent" onclick="grin(' . "'" . $name[$i] . "'" . ',type = \'Math\')" style="background-image: url(https://cdn.jsdelivr.net/gh/moezx/cdn@2.9.4/img/bili/hd/ic_emoji_' . $name[$i] . '.png);"><div class="img emotion-select-child" style="background-image: url(/cdn/smilies/bili/' . $name[$i] . '.png);
         animation-duration: ' . ($img_height / 32 * 40) . 'ms;
         animation-timing-function: steps(' . ($img_height / 32) . ');
         transform: translateY(-' . ($img_height - 32) . 'px);
         height: ' . $img_height . 'px;
         "></div></span>';
         // 正文转换
-        $bilismiliestrans['{{' . $name[$i] . '}}'] = '<span class="emotion-inline emotion-item"><img src="https://cdn.jsdelivr.net/gh/moezx/cdn@2.9.4/img/bili/' . $name[$i] . '.png" class="img" style="/*background-image: url();*/
+        $bilismiliestrans['{{' . $name[$i] . '}}'] = '<span class="emotion-inline emotion-item"><img src="/cdn/smilies/bili/' . $name[$i] . '.png" class="img" style="/*background-image: url();*/
         animation-duration: ' . ($img_height / 32 * 40) . 'ms;
         animation-timing-function: steps(' . ($img_height / 32) . ');
         transform: translateY(-' . ($img_height - 32) . 'px);
@@ -1265,7 +1340,7 @@ add_filter('the_content_feed', 'featuredtoRSS');
 //
 function bili_smile_filter_rss($content)
 {
-    $content = str_replace("{{", '<img src="https://cdn.jsdelivr.net/gh/moezx/cdn@2.9.4/img/bili/hd/ic_emoji_', $content);
+    $content = str_replace("{{", '<img src="/cdn/smilies/bili/', $content);
     $content = str_replace("}}", '.png" alt="emoji" style="height: 2em; max-height: 2em;">', $content);
     $content = str_replace('[img]', '<img src="', $content);
     $content = str_replace('[/img]', '" style="display: block;margin-left: auto;margin-right: auto;">', $content);

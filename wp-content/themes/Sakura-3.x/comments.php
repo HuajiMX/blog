@@ -76,13 +76,14 @@
                                         class="menhera-bar">(=・ω・=)</th>
                                     <th onclick="motionSwitch(\'.tieba\')"
                                         class="tieba-bar">Tieba</th>
+                                    <th onclick="motionSwitch(\'.qiusyan\')"
+                                        class="qiusyan-bar">QiuSYan</th>
                                 </tr>
                             </table>
                             <div class="bili-container motion-container">' . push_bili_smilies() . '</div>
-                            <div class="menhera-container motion-container" style="display:none;">
-                                '.push_emoji_panel().'
-                            </div>
+                            <div class="menhera-container motion-container" style="display:none;">' . push_emoji_panel() . '</div>
                             <div class="tieba-container motion-container" style="display:none;">' . push_smilies() . '</div>
+                            <div class="qiusyan-container motion-container" style="display:none;">' . push_qiusyan_smilies() . '</div>
                         </div>
                         <!--表情面版完-->',
 						'comment_notes_after' => '',
