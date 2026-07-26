@@ -1566,14 +1566,14 @@ function push_custom_smilies()
         
         if($smiley['type'] === 'emoji') {
             $custom_smilies_emoji_panel = $custom_smilies_emoji_panel . '<span title="' . $smiley['base_name'].'" ' . make_onclick_grin($smiley['base_name'],'Math').'><img alt="custom_smilies" class="custom-smilies-type-emoji" loading="lazy" src="' . $smiley_url . '" /></span>';
-            $custom_smiliestrans['{{' . $smiley['base_name'] . '}}'] = '<span title="' . $smiley['base_name'] . '" ><img alt="custom_smilies" loading="lazy" style="height: 30px; vertical-align: bottoml;" src="' . $smiley_url . '" /></span>';
+            $custom_smiliestrans['{{' . $smiley['base_name'] . '}}'] = '<span title="' . $smiley['base_name'] . '" ><img alt="custom_smilies" class="smilie-emoji-in-content" loading="lazy" src="' . $smiley_url . '" /></span>';
         } else if($smiley['type'] === 'meme') {
             $custom_smilies_meme_panel = $custom_smilies_meme_panel . '<span title="' . $smiley['base_name'].'" ' . make_onclick_grin($smiley['base_name'],'Math').'><img alt="custom_smilies" class="custom-smilies-type-meme" loading="lazy" src="' . $smiley_url . '" /></span>';
             $custom_smiliestrans['{{' . $smiley['base_name'] . '}}'] = '<span title="' . $smiley['base_name'] . '" ><img alt="custom_smilies" loading="lazy" style="height: 100px; display: block; margin: 5px; border-radius: 5px;" src="' . $smiley_url . '" /></span>';
         }
     }
 
-    $custom_smilies_panel = $custom_smilies_emoji_panel . '<br>' . $custom_smilies_meme_panel;
+    $custom_smilies_panel = $custom_smilies_emoji_panel . ($custom_smilies_emoji_panel ? '<br>' : '') . $custom_smilies_meme_panel;
     return $custom_smilies_panel;
 }
 
@@ -1609,7 +1609,7 @@ function push_tieba_smilies()
         // 选择面版
         $return_smiles = $return_smiles . '<span title="' . $tieba_Name . '" '.$grin.'><img alt="tieba_smilie" loading="lazy" src="' . iro_opt('vision_resource_basepath', 'https://s.nmxc.ltd/sakurairo_vision/@3.0/') . 'smilies/' . $tiebaimgdir . 'icon_' . $tieba_Name . $smiliesgs . '" /></span>';
         // 正文转换
-        $wpsmiliestrans['::' . $tieba_Name . '::'] = '<span title="' . $tieba_Name . '" '.$grin.'><img alt="tieba_smilie" loading="lazy" src="' . iro_opt('vision_resource_basepath', 'https://s.nmxc.ltd/sakurairo_vision/@3.0/') . 'smilies/' . $tiebaimgdir . 'icon_' . $tieba_Name . $smiliesgs . '" /></span>';
+        $wpsmiliestrans['::' . $tieba_Name . '::'] = '<span title="' . $tieba_Name . '" '.$grin.'><img alt="tieba_smilie" class="smilie-emoji-in-content" loading="lazy" src="' . iro_opt('vision_resource_basepath', 'https://s.nmxc.ltd/sakurairo_vision/@3.0/') . 'smilies/' . $tiebaimgdir . 'icon_' . $tieba_Name . $smiliesgs . '" /></span>';
     }
     return $return_smiles;
 }
@@ -1647,7 +1647,7 @@ function push_bili_smilies()
         // 选择面版
         $return_smiles = $return_smiles . '<span title="' . $smilies_Name . '" '.$grin.'><img alt="bili_smilies" loading="lazy" src="' . iro_opt('vision_resource_basepath', 'https://s.nmxc.ltd/sakurairo_vision/@3.0/') . 'smilies/' . $biliimgdir . 'emoji_' . $smilies_Name . $smiliesgs . '" /></span>';
         // 正文转换
-        $bilismiliestrans['{{' . $smilies_Name . '}}'] = '<span title="' . $smilies_Name . '" '.$grin.'><img alt="bili_smilies" loading="lazy" src="' . iro_opt('vision_resource_basepath', 'https://s.nmxc.ltd/sakurairo_vision/@3.0/') . 'smilies/' . $biliimgdir . 'emoji_' . $smilies_Name . $smiliesgs . '" /></span>';
+        $bilismiliestrans['{{' . $smilies_Name . '}}'] = '<span title="' . $smilies_Name . '" '.$grin.'><img alt="bili_smilies" class="smilie-emoji-in-content" loading="lazy" src="' . iro_opt('vision_resource_basepath', 'https://s.nmxc.ltd/sakurairo_vision/@3.0/') . 'smilies/' . $biliimgdir . 'emoji_' . $smilies_Name . $smiliesgs . '" /></span>';
     }
     return $return_smiles;
 }
