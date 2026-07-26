@@ -51,14 +51,16 @@ function get_smilies_panel() {
     }
     return '<div class="emotion-box no-select">
                 <div class="emotion-header no-select">' . __("Woooooow ヾ(≧∇≦*)ゝ", "sakurairo") . '</div>
-                <table class="motion-switcher-table">
-                    <tr>' .
-                        $bilibili_smilies .
-                        $tieba_smilies .
-                        $menhera_smilies .
-                        $custom_smilies .
-                    '</tr>
-                </table>' .
+                <div class="scroll-wrapper">
+                    <table class="motion-switcher-table">
+                        <tr>' .
+                            $bilibili_smilies .
+                            $tieba_smilies .
+                            $menhera_smilies .
+                            $custom_smilies .
+                        '</tr>
+                    </table>
+                </div>' .
                 $bilibili_push_smilies .
                 $tieba_push_smilies .
                 $menhera_push_smilies .

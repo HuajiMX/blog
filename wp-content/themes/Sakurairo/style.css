@@ -3370,6 +3370,32 @@ iframe {
   background-color: transparent;
   height: 0px;
 }
+
+/* 外层滚动容器 */
+.scroll-wrapper {
+    width: 100%;          /* 容器宽度自适应 */
+    overflow-x: auto;     /* 水平溢出时出现滚动条 */
+    -webkit-overflow-scrolling: touch; /* 移动端平滑滚动 */
+    background-color: #f5f5f5; /* 可选，便于观察 */
+    border-radius: 8px;   /* 可选 */
+}
+
+/* 表格自身：强制不换行 */
+.motion-switcher-table {
+    min-width: max-content;     /* 关键：保证表格宽度超过容器，触发滚动 */
+    width: 100%;          /* 可设置，但会被内容撑开 */
+    border-collapse: collapse;
+    table-layout: fixed;  /* 可选：固定列宽 */
+}
+
+/* 单元格内容强制一行 */
+.motion-switcher-table th {
+    white-space: nowrap;  /* 文字不换行 */
+    padding: 12px 16px;
+    text-align: center;
+    border: 1px solid #ddd;
+}
+
 /* 表情面板结束 */
 /* 表情选区 */
 .motion-container span:hover img,
@@ -3379,7 +3405,8 @@ iframe {
 }
 
 .bili-container,
-.tieba-container {
+.tieba-container,
+.custom-container {
   padding-left: 16px;
 }
 
@@ -3389,10 +3416,23 @@ iframe {
 }
 
 .tieba-container img,
-.bili-container img {
+.bili-container img
+.custom-smilies-type-emoji {
   width: 32px;
   height: 32px;
   margin: 7px;
+}
+
+.custom-smilies-type-meme {
+    max-width: 100px;
+    max-height: 100px;
+    width: auto;
+    height: auto;
+    aspect-ratio: auto;
+}
+
+.custom-container img {
+  border-radius: 5px;
 }
 
 .tieba-container img:hover {

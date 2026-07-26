@@ -1469,13 +1469,19 @@ function get_custom_smilies_list()
             $file_path = $file->getPathname();
             $file_little_path = str_replace(wp_get_upload_dir()['basedir'], '', $file_path);
             $file_url = wp_get_upload_dir()['baseurl'] . $file_little_path;
+
+            $file_base_name_part = explode('_', $file_base_name);
+            $name = $file_base_name_part[0];
+            $type = isset($file_base_name_part[1]) ? ($file_base_name_part[1] == '1' ? 'meme' : 'emoji') : 'emoji';
+
             if (in_array($file_extension, $custom_smilies_extension)) {
                 $custom_smilies_list[] = array(
                     'path' => $file_path,
                     'little_path' => $file_little_path,
                     'file_url' => $file_url,
                     'name' => $file_name,
-                    'base_name' => $file_base_name,
+                    'base_name' => $name,
+                    'type' => $type,
                     'extension' => $file_extension
                 );
             }
@@ -1540,7 +1546,8 @@ function push_custom_smilies()
 {
 
     global $custom_smiliestrans;
-    $custom_smilies_panel = '';
+    $custom_smilies_emoji_panel = '';
+    $custom_smilies_meme_panel = '';
     $custom_smilies_list = get_custom_smilies_list();
 
     if (!$custom_smilies_list) {
@@ -1556,10 +1563,17 @@ function push_custom_smilies()
         } else {
             $smiley_url = $smiley['file_url'];
         }
-        $custom_smilies_panel = $custom_smilies_panel . '<span title="' . $smiley['base_name'].'" ' . make_onclick_grin($smiley['base_name'],'Math').'><img alt="custom_smilies" loading="lazy" style="height: 60px;" src="' . $smiley_url . '" /></span>';
-        $custom_smiliestrans['{{' . $smiley['base_name'] . '}}'] = '<span title="' . $smiley['base_name'] . '" ><img alt="custom_smilies" loading="lazy" style="height: 60px;" src="' . $smiley_url . '" /></span>';
+        
+        if($smiley['type'] === 'emoji') {
+            $custom_smilies_emoji_panel = $custom_smilies_emoji_panel . '<span title="' . $smiley['base_name'].'" ' . make_onclick_grin($smiley['base_name'],'Math').'><img alt="custom_smilies" class="custom-smilies-type-emoji" loading="lazy" src="' . $smiley_url . '" /></span>';
+            $custom_smiliestrans['{{' . $smiley['base_name'] . '}}'] = '<span title="' . $smiley['base_name'] . '" ><img alt="custom_smilies" loading="lazy" style="height: 30px; vertical-align: bottoml;" src="' . $smiley_url . '" /></span>';
+        } else if($smiley['type'] === 'meme') {
+            $custom_smilies_meme_panel = $custom_smilies_meme_panel . '<span title="' . $smiley['base_name'].'" ' . make_onclick_grin($smiley['base_name'],'Math').'><img alt="custom_smilies" class="custom-smilies-type-meme" loading="lazy" src="' . $smiley_url . '" /></span>';
+            $custom_smiliestrans['{{' . $smiley['base_name'] . '}}'] = '<span title="' . $smiley['base_name'] . '" ><img alt="custom_smilies" loading="lazy" style="height: 100px; display: block; margin: 0 10px; border-radius: 5px;" src="' . $smiley_url . '" /></span>';
+        }
     }
 
+    $custom_smilies_panel = $custom_smilies_emoji_panel . '<br>' . $custom_smilies_meme_panel;
     return $custom_smilies_panel;
 }
 
