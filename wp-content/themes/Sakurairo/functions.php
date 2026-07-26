@@ -1569,7 +1569,7 @@ function push_custom_smilies()
             $custom_smiliestrans['{{' . $smiley['base_name'] . '}}'] = '<span title="' . $smiley['base_name'] . '" ><img alt="custom_smilies" loading="lazy" style="height: 30px; vertical-align: bottoml;" src="' . $smiley_url . '" /></span>';
         } else if($smiley['type'] === 'meme') {
             $custom_smilies_meme_panel = $custom_smilies_meme_panel . '<span title="' . $smiley['base_name'].'" ' . make_onclick_grin($smiley['base_name'],'Math').'><img alt="custom_smilies" class="custom-smilies-type-meme" loading="lazy" src="' . $smiley_url . '" /></span>';
-            $custom_smiliestrans['{{' . $smiley['base_name'] . '}}'] = '<span title="' . $smiley['base_name'] . '" ><img alt="custom_smilies" loading="lazy" style="height: 100px; display: block; margin: 0 10px; border-radius: 5px;" src="' . $smiley_url . '" /></span>';
+            $custom_smiliestrans['{{' . $smiley['base_name'] . '}}'] = '<span title="' . $smiley['base_name'] . '" ><img alt="custom_smilies" loading="lazy" style="height: 100px; display: block; margin: 5px; border-radius: 5px;" src="' . $smiley_url . '" /></span>';
         }
     }
 
