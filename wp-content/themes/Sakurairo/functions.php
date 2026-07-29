@@ -1325,8 +1325,13 @@ function comment_mail_notify($comment_id)
         
         // 处理表情符号和特殊格式
         $message = convert_smilies($message);
+
+        // 先处理自定义表情（custom smilies），它们也使用 {{...}} 格式
+        $message = custom_smilies_filter($message);
+
+        // 再处理 bili 表情（剩余的 {{...}}）
         $message = str_replace('{{', '<img src="' . iro_opt('vision_resource_basepath', 'https://s.nmxc.ltd/sakurairo_vision/@3.0/') . '/smilies/bilipng/emoji_', $message);
-        $message = str_replace('}}', '.png" alt="emoji" style="height: 1.5em; max-height: 1.5em; vertical-align: middle;">', $message);
+        $message = str_replace('}}', '.png" alt="emoji" style="height: 30px; max-height: 30px; vertical-align: middle;">', $message);
         
         // 处理图片
         $message = str_replace('{UPLOAD}', 'https://i.loli.net/', $message);
@@ -1569,7 +1574,7 @@ function push_custom_smilies()
         
         if($smiley['type'] === 'emoji') {
             $custom_smilies_emoji_panel = $custom_smilies_emoji_panel . '<span title="' . $smiley['base_name'].'" ' . make_onclick_grin($smiley['base_name'],'Math').'><img alt="custom_smilies" class="custom-smilies-type-emoji" loading="lazy" src="' . $smiley_url . '" /></span>';
-            $custom_smiliestrans['{{' . $smiley['base_name'] . '}}'] = '<span title="' . $smiley['base_name'] . '" ><img alt="custom_smilies" class="smilie-emoji-in-content" loading="lazy" src="' . $smiley_url . '" /></span>';
+            $custom_smiliestrans['{{' . $smiley['base_name'] . '}}'] = '<span title="' . $smiley['base_name'] . '" ><img alt="custom_smilies" class="smilie-emoji-in-content" loading="lazy" style="height: 30px; vertical-align: bottom;" src="' . $smiley_url . '" /></span>';
         } else if($smiley['type'] === 'meme') {
             $custom_smilies_meme_panel = $custom_smilies_meme_panel . '<span title="' . $smiley['base_name'].'" ' . make_onclick_grin($smiley['base_name'],'Math').'><img alt="custom_smilies" class="custom-smilies-type-meme" loading="lazy" src="' . $smiley_url . '" /></span>';
             $custom_smiliestrans['{{' . $smiley['base_name'] . '}}'] = '<span title="' . $smiley['base_name'] . '" ><img alt="custom_smilies" loading="lazy" style="height: 100px; display: block; margin: 5px; border-radius: 5px;" src="' . $smiley_url . '" /></span>';
