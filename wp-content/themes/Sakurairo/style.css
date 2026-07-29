@@ -3417,6 +3417,11 @@ iframe {
   border-radius: 5px;
 }
 
+.smilie-emoji-in-content {
+  height: 30px;
+  vertical-align: bottom;
+}
+
 .motion-switcher-table td,
 .motion-switcher-table th {
   padding: 8px;
