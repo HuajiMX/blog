@@ -4550,6 +4550,3 @@ function iro_action_operator()
 }
 iro_action_operator();
 
-// 将 JPEG 图片的压缩质量设置为 100%（完全无损）
-add_filter('jpeg_quality', function($arg){return 100;});
-add_filter('wp_editor_set_quality', function($arg){return 100;});
