@@ -1480,7 +1480,7 @@ function get_custom_smilies_list()
 
             $file_base_name_part = explode('_', $file_base_name);
             $name = $file_base_name_part[0];
-            $type = isset($file_base_name_part[1]) ? ($file_base_name_part[1] == '1' ? 'meme' : 'emoji') : 'emoji';
+            $type = isset($file_base_name_part[count($file_base_name_part) - 1]) ? ($file_base_name_part[count($file_base_name_part) - 1] == '1' ? 'meme' : 'emoji') : 'emoji';
 
             if (in_array($file_extension, $custom_smilies_extension)) {
                 $custom_smilies_list[] = array(
