@@ -1412,7 +1412,7 @@ function comment_picture_support($content)
 add_filter('comment_text', 'comment_picture_support');
 
 function split_custom_smilies_filename($str) {
-    if (preg_match($pattern, $str, $m)) {
+    if (preg_match('/^(.*)(_(0|1))$/', $str, $m)) {
         $prefix = $m[1];
         $suffix = $m[3];
     } else {
