@@ -1411,6 +1411,17 @@ function comment_picture_support($content)
 }
 add_filter('comment_text', 'comment_picture_support');
 
+function split_custom_smilies_filename($str) {
+    if (preg_match($pattern, $str, $m)) {
+        $prefix = $m[1];
+        $suffix = $m[3];
+    } else {
+        $prefix = $str;
+        $suffix = '';
+    }
+    return [$prefix, $suffix];
+}
+
 /*
  * 修改评论表情调用路径
  */
@@ -1478,9 +1489,9 @@ function get_custom_smilies_list()
             $file_little_path = str_replace(wp_get_upload_dir()['basedir'], '', $file_path);
             $file_url = wp_get_upload_dir()['baseurl'] . $file_little_path;
 
-            preg_match('/^(.*?)(_(.*))?$/', $file_base_name, $match);
-            $name = $match[1];
-            $type = isset($match[3]) ? $match[3] : '';
+            $split = split_custom_smilies_filename($file_base_name);
+            $name = $split[0];
+            $type = $split[1] ? 'meme' : 'emoji';
 
             if (in_array($file_extension, $custom_smilies_extension)) {
                 $custom_smilies_list[] = array(
