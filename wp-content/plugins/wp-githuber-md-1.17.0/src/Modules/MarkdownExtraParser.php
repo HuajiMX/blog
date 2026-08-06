@@ -209,11 +209,28 @@ class MarkdownExtraParser extends ParsedownExtra {
 	 * @return string Text that was preserved if needed
 	 */
 	public function single_line_code_preserve( $text ) {
-		return preg_replace_callback(
-			"/[`]{1}([^\n`]*?[^\n`])[`]{1}/",
-			array( $this, 'do_single_line_code_preserve' ),
-			$text
+		// Split out fenced code blocks so inline code inside them is left untouched
+		// (otherwise the <code> wrapper we add could leak into <pre> blocks).
+		$parts = preg_split(
+			'/(^[ \t]*[`~]{3,}[^\n]*\n[\s\S]*?\n[ \t]*[`~]{3,}[ \t]*(?=\n|$))/m',
+			$text,
+			-1,
+			PREG_SPLIT_DELIM_CAPTURE
 		);
+
+		foreach ( $parts as $index => $part ) {
+			// Fenced code blocks are captured at odd indices; leave them untouched.
+			if ( 1 === $index % 2 ) {
+				continue;
+			}
+			$parts[ $index ] = preg_replace_callback(
+				"/[`]{1}([^\n`]*?[^\n`])[`]{1}/",
+				array( $this, 'do_single_line_code_preserve' ),
+				$part
+			);
+		}
+
+		return implode( '', $parts );
 	}
 
 	/**
@@ -229,10 +246,10 @@ class MarkdownExtraParser extends ParsedownExtra {
 			$last_char  = substr( $matches[1], -1 );
 
 			if ( '{' === $first_char && '}' === $last_char ) {
-				return '<code class="kb-btn">' . $this->hash_block( esc_html( substr( $matches[1], 1, -1 ) ) ) . '</code>';
+				return $this->hash_block( '<code class="kb-btn">' . esc_html( substr( $matches[1], 1, -1 ) ) . '</code>' );
 			}
 		}
-		return '<code>' . $this->hash_block( esc_html( $matches[1] ) ) . '</code>';
+		return $this->hash_block( '<code>' . esc_html( $matches[1] ) . '</code>' );
 	}
 
 	/**
