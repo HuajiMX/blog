@@ -89,43 +89,6 @@ class Mermaid extends ModuleAbstract {
 	public function front_print_footer_scripts() {
 		$script = '
 			<script id="module-mermaid">
-				(function(){
-					/* 该内联脚本输出在 body 末尾（wp_footer），早于主题 app.js/page.js 的
-					   highlight.js 异步高亮。立即给 Mermaid 代码块打上 no-highlight 标记，
-					   让 highlight.js 跳过，避免把 Mermaid 源码当 CSS/HTML 自动高亮并报
-					   Unescaped HTML，导致图表无法渲染。 */
-					var blocks = document.querySelectorAll("pre code.language-mermaid");
-					for (var i = 0; i < blocks.length; i++) {
-						blocks[i].classList.add("no-highlight");
-						if (blocks[i].parentElement) {
-							blocks[i].parentElement.classList.add("no-highlight");
-						}
-					}
-					/* PJAX / AJAX 动态插入的 Mermaid 代码块也打上标记 */
-					if (window.MutationObserver) {
-						var mo = new MutationObserver(function(ms) {
-							for (var j = 0; j < ms.length; j++) {
-								var added = ms[j].addedNodes;
-								for (var k = 0; k < added.length; k++) {
-									var nd = added[k];
-									if (nd.nodeType !== 1) { continue; }
-									var els = nd.matches ? [nd] : [];
-									if (nd.querySelectorAll) {
-										els = els.concat(Array.prototype.slice.call(nd.querySelectorAll("pre code.language-mermaid")));
-									}
-									for (var l = 0; l < els.length; l++) {
-										var el = els[l];
-										el.classList.add("no-highlight");
-										if (el.parentElement) {
-											el.parentElement.classList.add("no-highlight");
-										}
-									}
-								}
-							}
-						});
-						mo.observe(document.body, { childList: true, subtree: true });
-					}
-				})();
 				(function($) {
 					$(function() {
 						if (typeof mermaid !== "undefined") {
