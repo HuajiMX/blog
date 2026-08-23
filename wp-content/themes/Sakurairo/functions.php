@@ -4561,3 +4561,15 @@ function iro_action_operator()
 }
 iro_action_operator();
 
+// 阻止对文章内容中的 code 标签进行转义
+add_filter('the_content', function($content) {
+    // 匹配 <code> 标签内的内容，保留原样
+    $content = preg_replace_callback(
+        '/<code>(.*?)<\/code>/s',
+        function($matches) {
+            return '<code>' . html_entity_decode($matches[1], ENT_QUOTES) . '</code>';
+        },
+        $content
+    );
+    return $content;
+}, 999);
