@@ -101,6 +101,7 @@ var spellcheck_lang = 'en_US';
 
         if ($(wp_editor_container).length === 1) {
             githuber_md_editor = editormd(wp_editor, global_editormd_config);
+            githuberSetupKatexPreview();
         }
 
         function reload_githuber_md() {
@@ -190,6 +191,11 @@ function githuberSetupKatexPreview() {
         return;
     }
 
+    if (window.__githuberKatexSetupDone) {
+        return;
+    }
+    window.__githuberKatexSetupDone = true;
+
     var originalMarked = editormd.$marked;
 
     // Hide $ inside code spans / fences / HTML code blocks so the math
@@ -198,13 +204,13 @@ function githuberSetupKatexPreview() {
         md = md.replace(
             /(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]+`|<pre\b[^>]*>[\s\S]*?<\/pre>|<code\b[^>]*>[\s\S]*?<\/code>)/g,
             function (m) {
-                return m.replace(/\$/g, '\x01GMDDOLLAR\x01');
+                return m.replace(/\$/g, 'GMDKATEXDOLLAR');
             }
         );
 
         // Display math: $$...$$ (may span multiple lines).
         md = md.replace(/\$\$([\s\S]+?)\$\$/g, function (m, g1) {
-            var key = '\x01GMDKATEX' + tokens.length + '\x01';
+            var key = 'GMDKATEX{' + tokens.length + '}';
             tokens.push({ key: key, math: g1, display: true });
             return key;
         });
@@ -213,7 +219,7 @@ function githuberSetupKatexPreview() {
         md = md.replace(
             /(?<![\\$])\$(?!\$)([^\$\n]+?)(?<!\\)\$(?!\$)/g,
             function (m, g1) {
-                var key = '\x01GMDKATEX' + tokens.length + '\x01';
+                var key = 'GMDKATEX{' + tokens.length + '}';
                 tokens.push({ key: key, math: g1, display: false });
                 return key;
             }
@@ -224,15 +230,14 @@ function githuberSetupKatexPreview() {
 
     function restoreKatexMath(html, tokens) {
         // Bring back $ inside code.
-        html = html.split('\x01GMDDOLLAR\x01').join('$');
+        html = html.split('GMDKATEXDOLLAR').join('$');
 
         for (var i = 0; i < tokens.length; i++) {
             var t = tokens[i];
-            var tag = t.display ? 'p' : 'span';
             var attr = t.display ? ' data-katex-display="true"' : '';
             var escaped = $('<span/>').text(t.math).html();
             html = html.split(t.key).join(
-                '<' + tag + ' class="' + editormd.classNames.tex + '"' + attr + '>' + escaped + '</' + tag + '>'
+                '<span class="' + editormd.classNames.tex + '"' + attr + '>' + escaped + '</span>'
             );
         }
 
@@ -273,20 +278,30 @@ function githuberSetupKatexPreview() {
         };
     }
 
-    // Make sure KaTeX is available for the preview.
-    if (!(editormd.$katex || (typeof katex !== 'undefined')) && !window.__githuberKatexLoading) {
+    // Make sure KaTeX is available, then re-render the current preview so
+    // already-open posts also get their math rendered.
+    var rerenderKatexPreview = function () {
+        if (typeof githuber_md_editor !== 'undefined' && githuber_md_editor) {
+            githuber_md_editor.save();
+        }
+    };
+
+    var ensureKatex = function () {
+        if (editormd.$katex || (typeof katex !== 'undefined')) {
+            rerenderKatexPreview();
+            return;
+        }
+        if (window.__githuberKatexLoading) {
+            return;
+        }
         window.__githuberKatexLoading = true;
         editormd.loadKaTeX(function () {
             editormd.$katex = katex;
-            if (typeof githuber_md_editor !== 'undefined' && githuber_md_editor) {
-                githuber_md_editor.katexRender();
-            }
+            rerenderKatexPreview();
         });
-    }
-}
+    };
 
-if (document.getElementById('wp-content-editor-container')) {
-    githuberSetupKatexPreview();
+    ensureKatex();
 }
 
 
