@@ -196,6 +196,8 @@ function githuberSetupKatexPreview() {
     }
     window.__githuberKatexSetupDone = true;
 
+    console.log('[Githuber MD] KaTeX preview: marked wrapped');
+
     var originalMarked = editormd.$marked;
 
     // Hide $ inside code spans / fences / HTML code blocks so the math
@@ -259,7 +261,11 @@ function githuberSetupKatexPreview() {
             if (!katexObj) {
                 return this;
             }
-            this.previewContainer.find('.' + editormd.classNames.tex).each(function () {
+            var nodes = this.previewContainer.find('.' + editormd.classNames.tex);
+            if (nodes.length > 0) {
+                console.log('[Githuber MD] KaTeX render:', nodes.length, 'node(s)');
+            }
+            nodes.each(function () {
                 var el = $(this);
                 if (el.find('.katex').length > 0) {
                     return; // Already rendered.
@@ -297,6 +303,7 @@ function githuberSetupKatexPreview() {
         window.__githuberKatexLoading = true;
         editormd.loadKaTeX(function () {
             editormd.$katex = katex;
+            console.log('[Githuber MD] KaTeX loaded for preview');
             rerenderKatexPreview();
         });
     };
