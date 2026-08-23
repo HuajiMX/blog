@@ -91,6 +91,11 @@ var spellcheck_lang = 'en_US';
                     more: 'More'
                 }
             },
+            onchange: function () {
+                if (editormd.$katex || (typeof katex !== 'undefined')) {
+                    this.katexRender();
+                }
+            },
         };
 
 
@@ -171,5 +176,117 @@ var spellcheck_lang = 'en_US';
         }
     });
 })(jQuery);
+
+/* -------------------------------------------------------------------------
+ * KaTeX live-preview integration.
+ *
+ * Renders $...$ (inline) and $$...$$ (display) math inside the Editor.md
+ * preview. The math content is protected from the Markdown parser before
+ * rendering, then handed to KaTeX as .editormd-tex elements.
+ * ---------------------------------------------------------------------- */
+function githuberSetupKatexPreview() {
+    if (typeof editormd === 'undefined' || !editormd.$marked) {
+        setTimeout(githuberSetupKatexPreview, 100);
+        return;
+    }
+
+    var originalMarked = editormd.$marked;
+
+    // Hide $ inside code spans / fences / HTML code blocks so the math
+    // patterns below never touch code content.
+    function protectKatexMath(md, tokens) {
+        md = md.replace(
+            /(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]+`|<pre\b[^>]*>[\s\S]*?<\/pre>|<code\b[^>]*>[\s\S]*?<\/code>)/g,
+            function (m) {
+                return m.replace(/\$/g, '\x01GMDDOLLAR\x01');
+            }
+        );
+
+        // Display math: $$...$$ (may span multiple lines).
+        md = md.replace(/\$\$([\s\S]+?)\$\$/g, function (m, g1) {
+            var key = '\x01GMDKATEX' + tokens.length + '\x01';
+            tokens.push({ key: key, math: g1, display: true });
+            return key;
+        });
+
+        // Inline math: $...$ (single line, unescaped delimiters).
+        md = md.replace(
+            /(?<![\\$])\$(?!\$)([^\$\n]+?)(?<!\\)\$(?!\$)/g,
+            function (m, g1) {
+                var key = '\x01GMDKATEX' + tokens.length + '\x01';
+                tokens.push({ key: key, math: g1, display: false });
+                return key;
+            }
+        );
+
+        return md;
+    }
+
+    function restoreKatexMath(html, tokens) {
+        // Bring back $ inside code.
+        html = html.split('\x01GMDDOLLAR\x01').join('$');
+
+        for (var i = 0; i < tokens.length; i++) {
+            var t = tokens[i];
+            var tag = t.display ? 'p' : 'span';
+            var attr = t.display ? ' data-katex-display="true"' : '';
+            var escaped = $('<span/>').text(t.math).html();
+            html = html.split(t.key).join(
+                '<' + tag + ' class="' + editormd.classNames.tex + '"' + attr + '>' + escaped + '</' + tag + '>'
+            );
+        }
+
+        return html;
+    }
+
+    // Wrap the markdown -> html step so math is never parsed by markdown.
+    editormd.$marked = function (md, renderer, options) {
+        var tokens = [];
+        var protectedMd = protectKatexMath(md, tokens);
+        var html = originalMarked.call(this, protectedMd, renderer, options);
+        return restoreKatexMath(html, tokens);
+    };
+
+    // Render .editormd-tex nodes with KaTeX, honouring display mode.
+    if (editormd.prototype) {
+        editormd.prototype.katexRender = function () {
+            var katexObj = editormd.$katex || (typeof katex !== 'undefined' ? katex : null);
+            if (!katexObj) {
+                return this;
+            }
+            this.previewContainer.find('.' + editormd.classNames.tex).each(function () {
+                var el = $(this);
+                if (el.find('.katex').length > 0) {
+                    return; // Already rendered.
+                }
+                var display = el.attr('data-katex-display') === 'true';
+                try {
+                    katexObj.render(el.text(), el[0], {
+                        displayMode: display,
+                        throwOnError: false
+                    });
+                } catch (e) {
+                    el.text(e.message);
+                }
+            });
+            return this;
+        };
+    }
+
+    // Make sure KaTeX is available for the preview.
+    if (!(editormd.$katex || (typeof katex !== 'undefined')) && !window.__githuberKatexLoading) {
+        window.__githuberKatexLoading = true;
+        editormd.loadKaTeX(function () {
+            editormd.$katex = katex;
+            if (typeof githuber_md_editor !== 'undefined' && githuber_md_editor) {
+                githuber_md_editor.katexRender();
+            }
+        });
+    }
+}
+
+if (document.getElementById('wp-content-editor-container')) {
+    githuberSetupKatexPreview();
+}
 
 
