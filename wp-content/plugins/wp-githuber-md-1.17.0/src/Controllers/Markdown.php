@@ -957,8 +957,15 @@ class Markdown extends ControllerAbstract {
 			$text = $this->restore_code_blocks( $text );
 		}
 
+		// Protect math ($...$ / $$...$$) content from being mangled by the Markdown parser.
+		$math_tokens = array();
+		$text = $this->preserve_math( $text, $math_tokens );
+
 		// Transform it!
 		$text = $this->get_parser()->transform( $text );
+
+		// Restore math content.
+		$text = $this->restore_math( $text, $math_tokens );
 
 		// Fetch remote images.
 		if ( $this->is_convert_remote_image() ) {
@@ -988,6 +995,71 @@ class Markdown extends ControllerAbstract {
 			$text = wp_slash( $text );
 		}
 
+		return $text;
+	}
+
+	/**
+	 * Protect `$...$` and `$$...$$` math content from being mangled by the
+	 * Markdown parser by temporarily replacing it with placeholder tokens.
+	 *
+	 * @param string $text   Post content (Markdown).
+	 * @param array  $tokens Placeholder -> original math mapping (by reference).
+	 * @return string
+	 */
+	protected function preserve_math( $text, &$tokens ) {
+		// Keep already-generated code blocks / inline code untouched.
+		$code_holders = array();
+		$text = preg_replace_callback(
+			'/<pre\b[^>]*>.*?<\/pre>|<code\b[^>]*>.*?<\/code>/is',
+			function ( $matches ) use ( &$code_holders ) {
+				$key = "\x1A" . 'GMDCODE' . count( $code_holders ) . "\x1A";
+				$code_holders[ $key ] = $matches[0];
+				return $key;
+			},
+			$text
+		);
+
+		// Display math: $$...$$ (may span multiple lines).
+		$text = preg_replace_callback(
+			'/\$\$([\s\S]+?)\$\$/',
+			function ( $matches ) use ( &$tokens ) {
+				$key = "\x1A" . 'GMDMATH' . count( $tokens ) . "\x1A";
+				$tokens[ $key ] = '$$' . $matches[1] . '$$';
+				return $key;
+			},
+			$text
+		);
+
+		// Inline math: $...$ (single line only).
+		$text = preg_replace_callback(
+			'/(?<![\\\\$])\$(?!\$)([^\$\n]+?)(?<![\\\\])\$(?!\$)/',
+			function ( $matches ) use ( &$tokens ) {
+				$key = "\x1A" . 'GMDMATH' . count( $tokens ) . "\x1A";
+				$tokens[ $key ] = '$' . $matches[1] . '$';
+				return $key;
+			},
+			$text
+		);
+
+		// Put code blocks back.
+		foreach ( $code_holders as $key => $value ) {
+			$text = str_replace( $key, $value, $text );
+		}
+
+		return $text;
+	}
+
+	/**
+	 * Restore math content previously protected by preserve_math().
+	 *
+	 * @param string $text   Post content.
+	 * @param array  $tokens Placeholder -> original math mapping.
+	 * @return string
+	 */
+	protected function restore_math( $text, $tokens ) {
+		foreach ( $tokens as $key => $value ) {
+			$text = str_replace( $key, $value, $text );
+		}
 		return $text;
 	}
 
