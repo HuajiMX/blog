@@ -170,3 +170,5 @@ class Mermaid extends ModuleAbstract {
 		echo preg_replace( '/\s+/', ' ', $script );
 	}
 }
+
+
