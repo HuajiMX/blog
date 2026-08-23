@@ -47,6 +47,7 @@ if (is_admin() && !wp_doing_ajax()) {
 require_once(KATEX__PLUGIN_DIR . 'scripts/shortcode.php');
 if (!wp_doing_ajax()) {
     require_once(KATEX__PLUGIN_DIR . 'scripts/block.php');
+    require_once(KATEX__PLUGIN_DIR . 'scripts/dollar.php');
     require_once(KATEX__PLUGIN_DIR . 'scripts/resource.php');
 }
 
