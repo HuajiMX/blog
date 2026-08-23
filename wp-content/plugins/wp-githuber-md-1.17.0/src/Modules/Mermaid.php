@@ -90,41 +90,69 @@ class Mermaid extends ModuleAbstract {
 		$script = '
 			<script id="module-mermaid">
 				(function(){
-					/* 该内联脚本输出在 body 末尾（wp_footer），早于主题 app.js/page.js 的
-					   highlight.js 异步高亮。立即给 Mermaid 代码块打上 no-highlight 标记，
-					   让 highlight.js 跳过，避免把 Mermaid 源码当 CSS/HTML 自动高亮并报
-					   Unescaped HTML，导致图表无法渲染。 */
-					var blocks = document.querySelectorAll("pre code.language-mermaid");
-					for (var i = 0; i < blocks.length; i++) {
-						blocks[i].classList.add("no-highlight");
-						if (blocks[i].parentElement) {
-							blocks[i].parentElement.classList.add("no-highlight");
+					/* 该内联脚本输出在 body 末尾（wp_footer），早于主题 app.js/page.js 的代码高亮。
+					   1) 立即给 Mermaid 代码块打上 no-highlight，避免 highlight.js 把它当普通代码
+					      自动高亮（报 Unescaped HTML 并破坏渲染）。
+					   2) 清理主题给 Mermaid 代码块附加的代码块装饰：highlight-wrap 边框、
+					      data-rel 语言标签、复制按钮、code-block id 等。 */
+					var isMermaid = function(el) {
+						return el && el.classList && (el.classList.contains("mermaid") || el.classList.contains("language-mermaid"));
+					};
+					var markNoHighlight = function() {
+						var els = document.querySelectorAll("pre code.language-mermaid, pre code.mermaid");
+						for (var i = 0; i < els.length; i++) {
+							els[i].classList.add("no-highlight");
+							if (els[i].parentElement) {
+								els[i].parentElement.classList.add("no-highlight");
+							}
 						}
-					}
-					/* PJAX / AJAX 动态插入的 Mermaid 代码块也打上标记 */
-					if (window.MutationObserver) {
-						var mo = new MutationObserver(function(ms) {
-							for (var j = 0; j < ms.length; j++) {
-								var added = ms[j].addedNodes;
-								for (var k = 0; k < added.length; k++) {
-									var nd = added[k];
-									if (nd.nodeType !== 1) { continue; }
-									var els = nd.matches ? [nd] : [];
-									if (nd.querySelectorAll) {
-										els = els.concat(Array.prototype.slice.call(nd.querySelectorAll("pre code.language-mermaid")));
-									}
-									for (var l = 0; l < els.length; l++) {
-										var el = els[l];
-										el.classList.add("no-highlight");
-										if (el.parentElement) {
-											el.parentElement.classList.add("no-highlight");
+					};
+					var cleanMermaidDecor = function() {
+						var codes = document.querySelectorAll("pre code.mermaid, pre code.language-mermaid");
+						for (var i = 0; i < codes.length; i++) {
+							var code = codes[i], pre = code.parentElement;
+							if (pre) {
+								pre.classList.remove("highlight-wrap");
+								["autocomplete", "autocorrect", "autocapitalize", "spellcheck", "contenteditable", "design"].forEach(function(a) {
+									pre.removeAttribute(a);
+								});
+								var btn = pre.querySelector(".copy-code");
+								if (btn) { btn.remove(); }
+							}
+							code.removeAttribute("data-rel");
+							code.removeAttribute("id");
+						}
+					};
+					markNoHighlight();
+					cleanMermaidDecor();
+					/* 主题的代码高亮是异步的（highlight.js chunk 加载完成后才执行），
+					   会在 Mermaid 渲染后才给代码块加边框/语言标签/复制按钮。
+					   用多次延迟清理覆盖该时机；不使用 MutationObserver 监听全 body，
+					   避免高频回调导致页面卡死。 */
+					setTimeout(cleanMermaidDecor, 600);
+					setTimeout(cleanMermaidDecor, 1500);
+					setTimeout(cleanMermaidDecor, 4000);
+					/* PJAX / AJAX 换页后重新清理 + 重新渲染 Mermaid */
+					document.addEventListener("pjax:complete", function() {
+						setTimeout(function() {
+							markNoHighlight();
+							cleanMermaidDecor();
+							/* 换页后 DOM 已被替换，需重新渲染 Mermaid 图表 */
+							if (typeof mermaid !== "undefined") {
+								var els = document.querySelectorAll("pre code.language-mermaid");
+								if (els.length > 0) {
+									for (var i = 0; i < els.length; i++) {
+										els[i].classList.add("mermaid");
+										els[i].classList.remove("language-mermaid");
+										if (els[i].parentElement) {
+											els[i].parentElement.setAttribute("style", "text-align: center; background: none;");
 										}
 									}
+									mermaid.init();
 								}
 							}
-						});
-						mo.observe(document.body, { childList: true, subtree: true });
-					}
+						}, 200);
+					});
 				})();
 				(function($) {
 					$(function() {

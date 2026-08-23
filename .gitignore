@@ -31,3 +31,6 @@ Thumbs.db
 readme.html
 license.txt
 
+# 神秘
+wp-content/plugins/
+!wp-content/plugins/katex/
