@@ -234,6 +234,13 @@ function githuberSetupKatexPreview() {
         // Bring back $ inside code.
         html = html.split('GMDKATEXDOLLAR').join('$');
 
+        // Strip math placeholders from HTML attribute values (e.g. the
+        // heading renderer puts the raw text into `name="..."`), so they
+        // never leak HTML into attributes.
+        html = html.replace(/([a-zA-Z][a-zA-Z0-9_-]*="[^"]*")/g, function (attr) {
+            return attr.replace(/GMDKATEX\{\d+\}/g, '');
+        });
+
         for (var i = 0; i < tokens.length; i++) {
             var t = tokens[i];
             var attr = t.display ? ' data-katex-display="true"' : '';
