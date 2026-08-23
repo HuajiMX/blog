@@ -247,12 +247,20 @@ function githuberSetupKatexPreview() {
     }
 
     // Wrap the markdown -> html step so math is never parsed by markdown.
-    editormd.$marked = function (md, renderer, options) {
+    // Keep marked's static members (Renderer, Parser, options, ...) on the
+    // wrapper, because Editor.md builds its renderer via editormd.$marked.Renderer.
+    var wrappedMarked = function (md, renderer, options) {
         var tokens = [];
         var protectedMd = protectKatexMath(md, tokens);
         var html = originalMarked.call(this, protectedMd, renderer, options);
         return restoreKatexMath(html, tokens);
     };
+    for (var k in originalMarked) {
+        if (Object.prototype.hasOwnProperty.call(originalMarked, k)) {
+            wrappedMarked[k] = originalMarked[k];
+        }
+    }
+    editormd.$marked = wrappedMarked;
 
     // Render .editormd-tex nodes with KaTeX, honouring display mode.
     if (editormd.prototype) {
