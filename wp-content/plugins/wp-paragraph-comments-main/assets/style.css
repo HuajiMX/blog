@@ -1,0 +1,239 @@
+.wp-paragraph-comments-entry {
+    color: #888888;
+    margin-left: 10px;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+.wp-paragraph-comments-count {
+    font-size: 12px;
+    background-color: #f0f0f0;
+    border-radius: 10px;
+    padding: 0 6px;
+    min-width: 20px;
+    margin-left: 5px;
+}
+
+.wp-paragraph-comments-entry:hover {
+    opacity: 80%;
+    cursor: pointer;
+}
+
+/* ===== 侧边评论列表 ===== */
+#wp-paragraph-comments-mask {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 9998;
+}
+
+#wp-paragraph-comments-sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 360px;
+    max-width: 90vw;
+    height: 100%;
+    background: #ffffff;
+    box-shadow: -2px 0 12px rgba(0, 0, 0, 0.1);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+}
+
+#wp-paragraph-comments-sidebar.wp-paragraph-comments-open {
+    transform: translateX(0);
+}
+
+.wp-paragraph-comments-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.wp-paragraph-comments-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333333;
+}
+
+#wp-paragraph-comments-sidebar-close {
+    border: none;
+    background: none;
+    font-size: 24px;
+    line-height: 1;
+    color: #999999;
+    cursor: pointer;
+    padding: 0 4px;
+}
+
+#wp-paragraph-comments-sidebar-close:hover {
+    color: #333333;
+}
+
+.wp-paragraph-comments-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.wp-paragraph-comments-loading,
+.wp-paragraph-comments-empty,
+.wp-paragraph-comments-end {
+    padding: 20px;
+    text-align: center;
+    font-size: 13px;
+    color: #999999;
+}
+
+/* ===== 发表评论表单（固定在列表顶部） ===== */
+.wp-paragraph-comments-form {
+    display: flex;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    background: #ffffff;
+    flex-shrink: 0;
+}
+
+.wp-paragraph-comments-form-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-right: 12px;
+    background: #f0f0f0;
+}
+
+.wp-paragraph-comments-form-fields {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.wp-paragraph-comments-form-fields input,
+.wp-paragraph-comments-form-fields textarea {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: inherit;
+    color: #333333;
+    background: #fafafa;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.wp-paragraph-comments-form-fields input:focus,
+.wp-paragraph-comments-form-fields textarea:focus {
+    border-color: #4a90d9;
+    background: #ffffff;
+}
+
+.wp-paragraph-comments-form-fields textarea {
+    resize: vertical;
+    min-height: 60px;
+    line-height: 1.5;
+}
+
+.wp-paragraph-comments-form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.wp-paragraph-comments-form-message {
+    font-size: 12px;
+    line-height: 1.4;
+    display: none;
+}
+
+.wp-paragraph-comments-form-message.wp-paragraph-comments-success {
+    color: #2ecc71;
+}
+
+.wp-paragraph-comments-form-message.wp-paragraph-comments-error {
+    color: #e74c3c;
+}
+
+#wp-paragraph-comments-form-submit {
+    align-self: flex-end;
+    padding: 6px 18px;
+    border: none;
+    border-radius: 4px;
+    background: #4a90d9;
+    color: #ffffff;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+#wp-paragraph-comments-form-submit:hover {
+    background: #3a7bc8;
+}
+
+.wp-paragraph-comments-item {
+    display: flex;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f7f7f7;
+}
+
+.wp-paragraph-comments-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-right: 12px;
+    background: #f0f0f0;
+}
+
+.wp-paragraph-comments-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.wp-paragraph-comments-meta {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: 4px;
+}
+
+.wp-paragraph-comments-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333333;
+    text-decoration: none;
+}
+
+a.wp-paragraph-comments-name:hover {
+    color: #4a90d9;
+    text-decoration: none;
+}
+
+.wp-paragraph-comments-time {
+    font-size: 12px;
+    color: #999999;
+    margin-left: 8px;
+}
+
+.wp-paragraph-comments-content {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #555555;
+    word-break: break-word;
+}

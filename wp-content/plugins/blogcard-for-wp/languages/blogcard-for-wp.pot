@@ -1,0 +1,378 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Blogcard for WP 2.1.2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-12-19 12:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: src/components/Controls.js:85
+msgid "ブロック設定"
+msgstr ""
+
+#: src/components/Controls.js:87
+msgid "URL"
+msgstr ""
+
+#: src/components/Controls.js:91
+#: src/components/SearchInput.js:13
+#: src/components/SearchInput.js:178
+msgid "https://example.com or キーワード"
+msgstr ""
+
+#: src/components/Controls.js:96
+#: src/components/Controls.js:98
+msgid "TARGET属性"
+msgstr ""
+
+#: src/components/Controls.js:109
+msgid "なし"
+msgstr ""
+
+#: src/components/Controls.js:110
+msgid "_blank（別タブ）"
+msgstr ""
+
+#: src/components/Controls.js:111
+msgid "_self （同じタブ）"
+msgstr ""
+
+#: src/components/Controls.js:117
+msgid "Rel属性"
+msgstr ""
+
+#: src/components/Controls.js:119
+msgid "noopener を追加"
+msgstr ""
+
+#: src/components/Controls.js:126
+msgid "_blankの場合はセキュリティ上noopenerが必須です"
+msgstr ""
+
+#: src/components/Controls.js:130
+msgid "rel=nofollow を追加"
+msgstr ""
+
+#: src/components/Controls.js:135
+msgid "rel=noreferrer を追加"
+msgstr ""
+
+#: src/components/Controls.js:140
+msgid "rel=sponsored を追加"
+msgstr ""
+
+#: src/components/Controls.js:145
+msgid "rel=ugc を追加"
+msgstr ""
+
+#: src/components/Controls.js:152
+msgid "サムネイル"
+msgstr ""
+
+#: src/components/Controls.js:154
+msgid "サムネイルを表示しない"
+msgstr ""
+
+#: src/components/Controls.js:161
+msgid "タイトルを手動で入力"
+msgstr ""
+
+#: src/components/Controls.js:163
+msgid "タイトル"
+msgstr ""
+
+#: src/components/Controls.js:166
+msgid "タイトルを入力"
+msgstr ""
+
+#: src/components/Controls.js:171
+msgid "説明文を手動で入力"
+msgstr ""
+
+#: src/components/Controls.js:173
+msgid "説明文"
+msgstr ""
+
+#: src/components/Controls.js:176
+msgid "説明文を入力"
+msgstr ""
+
+#: src/components/Controls.js:180
+msgid "Faviconを手動で入力"
+msgstr ""
+
+#: src/components/Controls.js:182
+msgid "Favicon URL"
+msgstr ""
+
+#: src/components/Controls.js:185
+msgid "https://example.com/favicon.ico"
+msgstr ""
+
+#: src/components/Controls.js:77
+msgid "サムネイルを設定"
+msgstr ""
+
+#: src/components/Controls.js:181
+msgid "サムネイルを手動で設定"
+msgstr ""
+
+#: src/components/Controls.js:215
+msgid "クリア"
+msgstr ""
+
+#: src/components/Controls.js:221
+msgid "キャッシュ管理"
+msgstr ""
+
+#: src/components/Controls.js:228
+msgid "このブログカードのキャッシュをクリア"
+msgstr ""
+
+#: src/components/Controls.js:236
+msgid "すべてのブログカードのキャッシュをクリア"
+msgstr ""
+
+#: src/components/Controls.js:264
+msgid "キャッシュのクリアに失敗しました。"
+msgstr ""
+
+#: src/components/Controls.js:268
+msgid "キャッシュのクリア中にエラーが発生しました。"
+msgstr ""
+
+#: src/components/LoadingSpinner.js:5
+msgid "メタデータを取得中..."
+msgstr ""
+
+#: src/components/PreviewFooter.js:46
+msgid "リンク先を確認"
+msgstr ""
+
+#: src/components/SearchInput.js:14
+msgid "URLまたはサイト内検索"
+msgstr ""
+
+#: src/components/SearchInput.js:60
+msgid "検索に失敗しました。"
+msgstr ""
+
+#: src/components/SearchInput.js:69
+msgid "検索中にエラーが発生しました。"
+msgstr ""
+
+#: src/components/SearchResults.js:14
+msgid "検索結果"
+msgstr ""
+
+#: src/components/SearchResults.js:23
+msgid "検索中..."
+msgstr ""
+
+#: src/components/SearchResults.js:59
+msgid "投稿"
+msgstr ""
+
+#: src/components/SearchResults.js:60
+msgid "固定ページ"
+msgstr ""
+
+#: src/components/SearchResults.js:75
+msgid "検索結果が見つかりませんでした"
+msgstr ""
+
+#: src/edit.jsx:165
+#: src/edit.jsx:198
+msgid "検索して作成"
+msgstr ""
+
+#: src/edit.jsx:174
+#: src/edit.jsx:188
+msgid "手動で作成"
+msgstr ""
+
+#: src/edit.jsx:215
+#: src/edit.jsx:239
+msgid "https://example.com"
+msgstr ""
+
+#: src/edit.jsx:216
+#: src/edit.jsx:240
+msgid "URLを変更するにはブロックを削除して再作成してください"
+msgstr ""
+
+#: src/edit.js:88
+#: blogcard-for-wp.php:155
+#: blogcard-for-wp.php:214
+msgid "メタデータの取得に失敗しました。"
+msgstr ""
+
+#: src/edit.js:98
+msgid "メタデータの取得中にエラーが発生しました。"
+msgstr ""
+
+#: src/block.json:6
+msgid "ブログカード"
+msgstr ""
+
+#: src/block.json:9
+msgid "URLを入力してブログカードを生成するブロックです。"
+msgstr ""
+
+#: blogcard-for-wp.php:106
+#: blogcard-for-wp.php:134
+#: blogcard-for-wp.php:143
+#: blogcard-for-wp.php:171
+#: blogcard-for-wp.php:194
+msgid "URLが指定されていません。"
+msgstr ""
+
+#: blogcard-for-wp.php:204
+#: blogcard-for-wp.php:241
+#: blogcard-for-wp.php:264
+msgid "無効なURL形式です。"
+msgstr ""
+
+#: blogcard-for-wp.php:256
+#: blogcard-for-wp.php:296
+#: blogcard-for-wp.php:324
+msgid "サーバーの応答が遅すぎます。しばらく時間をおいてから再度お試しください。"
+msgstr ""
+
+#: blogcard-for-wp.php:260
+#: blogcard-for-wp.php:300
+#: blogcard-for-wp.php:328
+msgid "サーバーに接続できませんでした。"
+msgstr ""
+
+#: blogcard-for-wp.php:264
+#: blogcard-for-wp.php:304
+#: blogcard-for-wp.php:332
+msgid "SSL証明書の検証に失敗しました。"
+msgstr ""
+
+#: blogcard-for-wp.php:278
+#: blogcard-for-wp.php:318
+#: blogcard-for-wp.php:346
+msgid "HTTPエラーが発生しました"
+msgstr ""
+
+#: blogcard-for-wp.php:281
+#: blogcard-for-wp.php:321
+#: blogcard-for-wp.php:349
+msgid "ページが見つかりません (404)"
+msgstr ""
+
+#: blogcard-for-wp.php:284
+#: blogcard-for-wp.php:324
+#: blogcard-for-wp.php:352
+msgid "アクセスが拒否されました (403)"
+msgstr ""
+
+#: blogcard-for-wp.php:287
+#: blogcard-for-wp.php:327
+#: blogcard-for-wp.php:355
+msgid "サーバーエラーが発生しました (500)"
+msgstr ""
+
+#: blogcard-for-wp.php:290
+#: blogcard-for-wp.php:330
+#: blogcard-for-wp.php:358
+msgid "サービスが利用できません (503)"
+msgstr ""
+
+#: blogcard-for-wp.php:293
+#: blogcard-for-wp.php:333
+#: blogcard-for-wp.php:361
+msgid "HTTPエラーが発生しました (%d)"
+msgstr ""
+
+#: blogcard-for-wp.php:376
+#: blogcard-for-wp.php:419
+#: blogcard-for-wp.php:452
+msgid "検索クエリが指定されていません。"
+msgstr ""
+
+#: blogcard-for-wp.php:432
+#: blogcard-for-wp.php:476
+#: blogcard-for-wp.php:509
+msgid "指定されたURLの投稿が見つかりません。"
+msgstr ""
+
+#: blogcard-for-wp.php:478
+#: blogcard-for-wp.php:522
+#: blogcard-for-wp.php:555
+msgid "全てのキャッシュをクリアしました。"
+msgstr ""
+
+#: blogcard-for-wp.php:486
+#: blogcard-for-wp.php:530
+#: blogcard-for-wp.php:563
+msgid "ブログカードのキャッシュをクリアしました。"
+msgstr ""
+
+#: includes/admin-settings.php:16
+msgid "SU Blogcard"
+msgstr ""
+
+#: includes/admin-settings.php:33
+msgid "一般設定"
+msgstr ""
+
+#: includes/admin-settings.php:40
+msgid "外部リンクのターゲット"
+msgstr ""
+
+#: includes/admin-settings.php:48
+msgid "内部リンクのターゲット"
+msgstr ""
+
+#: includes/admin-settings.php:56
+msgid "キャッシュ保持期間"
+msgstr ""
+
+#: includes/admin-settings.php:64
+msgid "データ削除設定"
+msgstr ""
+
+#: includes/admin-settings.php:98
+#: includes/admin-settings.php:113
+msgid "_blank (新しいタブで開く)"
+msgstr ""
+
+#: includes/admin-settings.php:99
+#: includes/admin-settings.php:114
+msgid "_self (同じタブで開く)"
+msgstr ""
+
+#: includes/admin-settings.php:101
+msgid "外部サイトへのリンクのデフォルトのターゲット属性を設定します。"
+msgstr ""
+
+#: includes/admin-settings.php:116
+msgid "自サイト内へのリンクのデフォルトのターゲット属性を設定します。"
+msgstr ""
+
+#: includes/admin-settings.php:128
+msgid "ブログカードのメタデータ情報のキャッシュ保持期間を設定します（単位：時間）。"
+msgstr ""
+
+#: includes/admin-settings.php:141
+msgid "プラグイン削除時にすべてのデータ（設定とキャッシュ）を削除する"
+msgstr ""
+
+#: includes/admin-settings.php:143
+msgid "この設定を有効にすると、プラグインをアンインストールした際に、保存された設定とキャッシュデータがすべて削除されます。"
+msgstr ""
