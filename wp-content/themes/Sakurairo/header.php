@@ -249,6 +249,13 @@ header('X-Frame-Options: SAMEORIGIN');
                     </span>
                 </div>
             <?php endif; ?>
+
+            <div class="to-shuoshuo" style="display:none">
+                <a href="/shuoshuo"><i class="fa-solid fa-message" aria-hidden="true"></i></a>
+                <span class="screen-reader-text">
+                    <?php esc_html_e('Shuoshuo', 'sakurairo'); ?>
+                </span>
+            </div>
         </div>
 
         <div class="mo-toc-button">

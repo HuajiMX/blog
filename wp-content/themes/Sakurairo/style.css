@@ -790,7 +790,26 @@ nav .menu > li .sub-menu a {
   height: 100%;
 }
 
-.searchbox.js-toggle-search i,.bg-switch i{
+/* 说说入口：与 .bg-switch 一致，仅首页显示 */
+.to-shuoshuo {
+  font-size: 16px;
+  flex: 0 0 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  transition: all .4s ease-in-out;
+  -webkit-transition: all .4s ease-in-out;
+}
+
+.to-shuoshuo a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+  text-decoration: none;
+}
+
+.searchbox.js-toggle-search i,.bg-switch i, .to-shuoshuo i {
   color: var(--theme-skin, #505050);
   cursor: pointer;
   transition: all .4s ease-in-out;
@@ -806,7 +825,7 @@ nav .menu > li .sub-menu a {
   justify-content: center;
 }
 
-.searchbox.js-toggle-search i:hover,.bg-switch i:hover {
+.searchbox.js-toggle-search i:hover,.bg-switch i:hover, .to-shuoshuo i:hover {
   color: rgba(255, 255, 255, 0.8);
   transition: all .4s ease-in-out;
   background-color: var(--theme-skin-matching);

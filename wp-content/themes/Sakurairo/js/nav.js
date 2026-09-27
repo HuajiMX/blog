@@ -25,6 +25,7 @@ function init_iro_nav() {
 // 定义DOM元素
 const DOM = {
     bgNext: document.getElementById("bg-next"),
+    toShuoshuo: document.querySelector(".to-shuoshuo"),
     navSearchWrapper: document.querySelector(".nav-search-wrapper"),
     searchbox: document.querySelector(".searchbox.js-toggle-search"),
     divider: document.querySelector(".nav-search-divider"),
@@ -778,9 +779,44 @@ const initArticleTitleBehavior = () => {
     }, 300); // 等待浏览器滚动恢复
 };
 
+// 与 .bg-switch 一致：仅在首页展示“说说”入口
+const shuoshuoSwitcher = (animate = true) => {
+    const el = DOM.toShuoshuo;
+    if (!el) return;
+
+    const isHomePage = location.pathname === "/" || location.pathname === "/index.php";
+
+    if (!isHomePage) {
+        el.style.display = "none";
+        el.style.opacity = "0";
+        el.style.transform = "translateX(20px)";
+        return;
+    }
+
+    el.style.display = "flex";
+
+    if (!animate) {
+        el.style.opacity = "1";
+        el.style.transform = "translateX(0)";
+        return;
+    }
+
+    // 宽度立即占位，避免影响 bg-switch 的导航宽度测量；仅做淡入位移动画
+    el.style.transition = "none";
+    el.style.opacity = "0";
+    el.style.transform = "translateX(20px)";
+    void el.offsetWidth;
+    el.style.transition = `all ${ANIMATION.duration} ${ANIMATION.easing}`;
+    requestAnimationFrame(() => {
+        el.style.opacity = "1";
+        el.style.transform = "translateX(0)";
+    });
+};
+
 // 初始化所有动画
 const initAnimations = () => {
     StateManager.init();
+    shuoshuoSwitcher(true);
     showBgNext();
     initArticleTitleBehavior();
 };
@@ -814,6 +850,7 @@ const addEventListeners = () => {
                 delete DOM.navSearchWrapper.dataset.scrollswap;
                 DOM.navSearchWrapper.style.setProperty("--dw", "0");
                 
+                shuoshuoSwitcher(true);
                 showBgNext();
                 if (window._searchWrapperState) {
                     window._searchWrapperState.init();
@@ -826,6 +863,7 @@ const addEventListeners = () => {
         ["DOMContentLoaded", initAnimations],
         ['popstate', () => {
             const isHomePage = location.pathname === "/" || location.pathname === "/index.php";
+            shuoshuoSwitcher(true);
             if (isHomePage) {
                 StateManager.clear();
                 StateManager.init();
