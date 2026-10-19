@@ -652,6 +652,11 @@ class IRO_Image_Pool
             @unlink($tmp);
             return new WP_Error('iro_pool_small', '图片尺寸过小（' . (int) $info[0] . 'x' . (int) $info[1] . '）');
         }
+        if (((int) $info[0] * (int) $info[1]) > IRO_IMAGE_POOL_MAX_PIXELS) {
+            // 例如 12000×6912：GD 解码要 300MB 以上内存，直接拒绝，让接口换一张。
+            @unlink($tmp);
+            return new WP_Error('iro_pool_pixels', '图片像素过大（' . (int) $info[0] . 'x' . (int) $info[1] . '）');
+        }
 
         $mime = '';
         if (!empty($info['mime'])) {
