@@ -604,7 +604,9 @@ function sakura_scripts()
     
     // 平滑滚动脚本优化为延迟加载
     if (iro_opt('smoothscroll_option')) {
-        wp_enqueue_script('SmoothScroll', $shared_lib_basepath . '/js/smoothscroll.js', array(), IRO_VERSION . iro_opt('cookie_version', ''), true);
+        // 之前引用 CDN 上的 sakurairo/@3.0.10/js/smoothscroll.js，该地址已 404；
+        // 主题自带同名文件，改为同源加载，省掉一次 404 往返。
+        wp_enqueue_script('SmoothScroll', get_template_directory_uri() . '/js/smoothscroll.js', array(), IRO_VERSION . iro_opt('cookie_version', ''), true);
     }
 }
 add_action('wp_enqueue_scripts', 'sakura_scripts');
