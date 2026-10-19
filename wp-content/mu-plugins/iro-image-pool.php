@@ -61,6 +61,29 @@ if (!defined('IRO_IMAGE_POOL_MIN_DIMENSION')) {
     define('IRO_IMAGE_POOL_MIN_DIMENSION', 64);
 }
 
+/*
+ * 图片压缩：外部随机图 API 常见返回 2–6MB 的 4K 原图，直接落地会让
+ * 首页一次滚动就下载十几 MB。下载后统一缩到合理宽度并转成 WebP。
+ */
+if (!defined('IRO_IMAGE_POOL_OPTIMIZE')) {
+    define('IRO_IMAGE_POOL_OPTIMIZE', true);
+}
+if (!defined('IRO_IMAGE_POOL_WEBP_QUALITY')) {
+    define('IRO_IMAGE_POOL_WEBP_QUALITY', 82);
+}
+if (!defined('IRO_IMAGE_POOL_MAX_WIDTH_DESKTOP')) {
+    define('IRO_IMAGE_POOL_MAX_WIDTH_DESKTOP', 1920);
+}
+if (!defined('IRO_IMAGE_POOL_MAX_WIDTH_POST')) {
+    define('IRO_IMAGE_POOL_MAX_WIDTH_POST', 1280);
+}
+if (!defined('IRO_IMAGE_POOL_MAX_WIDTH_MOBILE')) {
+    define('IRO_IMAGE_POOL_MAX_WIDTH_MOBILE', 1080);
+}
+if (!defined('IRO_IMAGE_POOL_MAX_PIXELS')) {
+    define('IRO_IMAGE_POOL_MAX_PIXELS', 40000000);
+}
+
 /**
  * 图片池核心类。
  */
@@ -157,15 +180,27 @@ class IRO_Image_Pool
     /**
      * 生成图片池接口地址。
      *
+     * 前台使用 wp-content/mu-plugins/iro-image-pool/random.php 这个独立文件，
+     * 它不加载 WordPress（约 2ms 完成 302），避免每张图都走一次完整的
+     * REST API 引导（约 110ms，6 张并发时接近 0.7s）。
+     *
      * @param string $type desktop|mobile|post。
      * @return string
      */
     public static function endpoint_url($type)
     {
-        return add_query_arg(
-            'iro_type',
-            $type,
-            rest_url('iro-image-pool/v1/random')
+        $url = content_url('mu-plugins/iro-image-pool/random.php');
+
+        /**
+         * 允许切换到其他端点（例如需要回滚到 REST 接口时）。
+         *
+         * @param string $url  端点地址。
+         * @param string $type 类型。
+         */
+        return apply_filters(
+            'iro_image_pool_endpoint_url',
+            add_query_arg('type', $type, $url),
+            $type
         );
     }
 
@@ -630,6 +665,14 @@ class IRO_Image_Pool
             return new WP_Error('iro_pool_unsupported', '不支持的图片格式（' . ($mime !== '' ? $mime : 'unknown') . '）');
         }
 
+        // 外部 API 经常返回 4K 原图（单张 2–6MB），先压缩再入库。
+        $optimized = self::optimize_image($tmp, $mime, $type);
+        if (is_array($optimized)) {
+            @unlink($tmp);
+            $tmp  = $optimized['path'];
+            $mime = $optimized['mime'];
+        }
+
         $ext   = $allowed[$mime];
         $name  = gmdate('YmdHis') . '-' . self::random_token(6) . '.' . $ext;
         $final = $dir . '/' . $name;
@@ -648,6 +691,236 @@ class IRO_Image_Pool
             'size'  => $size === false ? strlen($body) : (int) $size,
             'added' => time(),
         );
+    }
+
+    /* ---------------------------------------------------------------------
+     * 图片压缩
+     * ------------------------------------------------------------------ */
+
+    /**
+     * 某一类图片的目标最大宽度。
+     *
+     * @param string $type 类型。
+     * @return int
+     */
+    private static function max_width($type)
+    {
+        switch ($type) {
+            case 'desktop':
+                $width = IRO_IMAGE_POOL_MAX_WIDTH_DESKTOP;
+                break;
+            case 'mobile':
+                $width = IRO_IMAGE_POOL_MAX_WIDTH_MOBILE;
+                break;
+            default:
+                $width = IRO_IMAGE_POOL_MAX_WIDTH_POST;
+        }
+
+        /**
+         * 允许按类型调整最大宽度。
+         *
+         * @param int    $width 目标宽度。
+         * @param string $type  类型。
+         */
+        return (int) apply_filters('iro_image_pool_max_width', (int) $width, $type);
+    }
+
+    /**
+     * 把图片缩到目标宽度并转为 WebP。
+     *
+     * 返回 false 表示“保持原样”（GIF、GD 不可用、图片过大等），调用方
+     * 继续使用原文件即可。
+     *
+     * @param string $path 文件路径。
+     * @param string $mime 当前 MIME。
+     * @param string $type 类型。
+     * @return array|false
+     */
+    private static function optimize_image($path, $mime, $type)
+    {
+        if (!IRO_IMAGE_POOL_OPTIMIZE || $mime === 'image/gif' || !function_exists('imagewebp')) {
+            return false;
+        }
+        if (!is_file($path) || (int) @filesize($path) < 10 * 1024) {
+            return false;
+        }
+
+        $info = @getimagesize($path);
+        if (!is_array($info) || empty($info[0]) || empty($info[1])) {
+            return false;
+        }
+
+        $width  = (int) $info[0];
+        $height = (int) $info[1];
+        if ($width < 1 || $height < 1 || ($width * $height) > IRO_IMAGE_POOL_MAX_PIXELS) {
+            return false;
+        }
+
+        $max = self::max_width($type);
+        if ($max < 1) {
+            return false;
+        }
+
+        $target_w = min($width, $max);
+        $target_h = (int) max(1, round($height * $target_w / $width));
+
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(60);
+        }
+        // 4000×3000 的图解码后约 48MB，默认 128M 限制在并发时容易被顶爆。
+        @ini_set('memory_limit', '256M');
+
+        $data = @file_get_contents($path);
+        if (!is_string($data) || $data === '') {
+            return false;
+        }
+        $src = @imagecreatefromstring($data);
+        unset($data);
+        if (!$src) {
+            return false;
+        }
+
+        $dst = @imagecreatetruecolor($target_w, $target_h);
+        if (!$dst) {
+            imagedestroy($src);
+            return false;
+        }
+
+        imagealphablending($dst, false);
+        imagesavealpha($dst, true);
+        imagefill($dst, 0, 0, imagecolorallocatealpha($dst, 0, 0, 0, 127));
+        imagecopyresampled($dst, $src, 0, 0, 0, 0, $target_w, $target_h, $width, $height);
+        imagedestroy($src);
+
+        $out = $path . '.webp';
+        $ok  = @imagewebp($dst, $out, (int) IRO_IMAGE_POOL_WEBP_QUALITY);
+        imagedestroy($dst);
+
+        if (!$ok || !is_file($out) || (int) @filesize($out) < 1024) {
+            @unlink($out);
+            return false;
+        }
+
+        return array(
+            'path'   => $out,
+            'mime'   => 'image/webp',
+            'width'  => $target_w,
+            'height' => $target_h,
+        );
+    }
+
+    /**
+     * 压缩某一类图片池中已有的图片（一次性维护用）。
+     *
+     * 新文件名带 -opt 后缀，URL 随之变化，可绕开 CDN 上按旧 URL 缓存的
+     * 大图；处理完成后同步更新 index.json。
+     *
+     * @param string $type 类型。
+     * @return array
+     */
+    public static function optimize_type($type)
+    {
+        $result = array(
+            'type'    => $type,
+            'files'   => 0,
+            'skipped' => 0,
+            'errors'  => 0,
+            'before'  => 0,
+            'after'   => 0,
+        );
+
+        $dir = self::pool_dir($type);
+        if ($dir === '') {
+            return $result;
+        }
+
+        $index = self::read_index($type);
+        if (empty($index['items'])) {
+            return $result;
+        }
+
+        $changed = false;
+        foreach ($index['items'] as $i => $item) {
+            $file = $dir . '/' . $item['file'];
+            if (!is_file($file)) {
+                continue;
+            }
+
+            $before = (int) @filesize($file);
+            $result['before'] += $before;
+
+            if (strpos($item['file'], '-opt.') !== false) {
+                $result['after'] += $before;
+                $result['skipped']++;
+                continue;
+            }
+
+            $mime = isset($item['mime']) ? self::normalize_mime($item['mime']) : '';
+            if ($mime === '' && function_exists('wp_get_image_mime')) {
+                $mime = self::normalize_mime((string) wp_get_image_mime($file));
+            }
+
+            $optimized = self::optimize_image($file, $mime, $type);
+            if (!is_array($optimized)) {
+                $result['after'] += $before;
+                $result['errors']++;
+                continue;
+            }
+
+            $stem     = pathinfo($item['file'], PATHINFO_FILENAME);
+            $new_name = $stem . '-opt.webp';
+            $new_path = $dir . '/' . $new_name;
+
+            if (!@rename($optimized['path'], $new_path)) {
+                @unlink($optimized['path']);
+                $result['after'] += $before;
+                $result['errors']++;
+                continue;
+            }
+            @chmod($new_path, 0644);
+
+            if ($new_path !== $file) {
+                @unlink($file);
+            }
+
+            $size = (int) @filesize($new_path);
+
+            $index['items'][$i]['file'] = $new_name;
+            $index['items'][$i]['mime'] = 'image/webp';
+            $index['items'][$i]['size'] = $size;
+
+            $result['after'] += $size;
+            $result['files']++;
+            $changed = true;
+
+            unset($optimized);
+        }
+
+        if ($changed) {
+            $index['updated'] = time();
+            self::write_index($type, $index);
+        }
+
+        return $result;
+    }
+
+    /**
+     * 压缩全部类型的已有图片。
+     *
+     * @return array
+     */
+    public static function optimize_all()
+    {
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(0);
+        }
+
+        $results = array();
+        foreach (self::$types as $type) {
+            $results[$type] = self::optimize_type($type);
+        }
+
+        return $results;
     }
 
     /* ---------------------------------------------------------------------
@@ -1546,6 +1819,34 @@ class IRO_Image_Pool_CLI
             );
         }
         \WP_CLI::success('图片池更新完成。');
+    }
+
+    /**
+     * 压缩图片池里已有的图片（一次性维护）。
+     *
+     * @param array $args       位置参数。
+     * @param array $assoc_args 关联参数。
+     * @return void
+     */
+    public function optimize($args, $assoc_args)
+    {
+        $results = IRO_Image_Pool::optimize_all();
+
+        foreach ($results as $type => $result) {
+            \WP_CLI::line(
+                sprintf(
+                    '%-8s converted=%d skipped=%d errors=%d %s -> %s',
+                    $type,
+                    $result['files'],
+                    $result['skipped'],
+                    $result['errors'],
+                    size_format($result['before'], 1),
+                    size_format($result['after'], 1)
+                )
+            );
+        }
+
+        \WP_CLI::success('图片池压缩完成。');
     }
 }
 
