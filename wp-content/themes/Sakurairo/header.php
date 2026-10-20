@@ -73,7 +73,7 @@ header('X-Frame-Options: SAMEORIGIN');
     <?php wp_head(); ?>
     <link rel="alternate" type="application/rss+xml" title="<?php bloginfo('name'); ?>｜<?php bloginfo('description'); ?>" href="<?php bloginfo('rss2_url'); ?>" />
     
-    <link rel="stylesheet" href="<?php echo esc_url(get_template_directory_uri() . '/css/fonts.css'); ?>" media="all">
+    <link rel="stylesheet" href="<?php echo esc_url(get_template_directory_uri() . '/css/fonts.css?v=2'); ?>" media="all">
     <?php if (iro_opt('google_analytics_id')) : ?>
         <!-- Global site tag (gtag.js) - Google Analytics -->
         <script async src="https://www.googletagmanager.com/gtag/js?id=<?= esc_attr(iro_opt('google_analytics_id')); ?>"></script>
