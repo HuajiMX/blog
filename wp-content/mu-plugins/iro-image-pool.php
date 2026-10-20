@@ -1101,7 +1101,8 @@ class IRO_Image_Pool
                 }
             }
 
-            self::update_status(array('last_run' => time()));
+            // 能走到这里说明确实拿到了锁并执行过，才更新“最近一次运行时间”。
+            self::update_status(array('last_run' => $summary['started']));
         } finally {
             self::release_lock();
         }
@@ -1153,12 +1154,28 @@ class IRO_Image_Pool
             return false;
         }
 
-        $last_run = isset($status['last_run']) ? (int) $status['last_run'] : 0;
-        return (time() - $last_run) > (int) IRO_IMAGE_POOL_INTERVAL;
+        // 以“每种类型最近一次成功获取的时间”为准，而不是以某次运行的标记时间为准，
+        // 这样即使锁冲突、定时任务被页面缓存吞掉，只要图片超过时限没更新就一定过期。
+        foreach ($types as $type) {
+            if (self::resolve_source($type) === '') {
+                continue;
+            }
+            $type_status = isset($status['types'][$type]) && is_array($status['types'][$type]) ? $status['types'][$type] : array();
+            $last_fetch  = isset($type_status['last_fetch']) ? (int) $type_status['last_fetch'] : 0;
+            if ((time() - $last_fetch) > (int) IRO_IMAGE_POOL_INTERVAL) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
      * 通过非阻塞回环请求触发后台更新。
+     *
+     * 注意：站点全页缓存（W3TC / CDN）会命中 HTML 并在 WP 引导后立即返回，
+     * 回环请求可能拿不到响应、后台任务不执行。真正的兜底是 cron 任务，
+     * 以及后台“立即更新图片池”/WP-CLI。
      *
      * @param bool $force 池为空时强制尝试。
      * @return bool
@@ -1176,7 +1193,9 @@ class IRO_Image_Pool
         // 不会为每张图都去读索引文件或查询非自动加载选项。
         $last_kick = (int) get_option(self::OPTION_LAST_KICK, 0);
         $window    = 10 * (defined('MINUTE_IN_SECONDS') ? MINUTE_IN_SECONDS : 60);
-        if ($last_kick > 0 && (time() - $last_kick) < $window) {
+        // 只有“上一次确实派发了刷新”才限流；上一次只是空检查不能把后续检查拦住，
+        // 否则页面缓存期间图片池可能长时间得不到更新。
+        if ($last_kick > 0 && (time() - $last_kick) < $window && self::lock_alive()) {
             return false;
         }
         update_option(self::OPTION_LAST_KICK, time(), true);
@@ -1225,7 +1244,57 @@ class IRO_Image_Pool
      */
     public static function cron_refresh()
     {
-        self::refresh_all(false);
+        // 定时任务晚到（全页缓存吞掉了 wp-cron.php、服务器休眠等）时不跳过，
+        // 由 refresh_type() 里按类型记录的「最近成功获取」决定是否需要下载。
+        $result = self::refresh_all(true);
+        self::log_run($result, 'cron');
+    }
+
+    /**
+     * 记录一次运行结果，便于排查（存在状态选项里，后台可见）。
+     *
+     * @param array|WP_Error $result 运行结果。
+     * @param string         $source cron|kick|manual|cli。
+     * @return void
+     */
+    public static function log_run($result, $source)
+    {
+        if (is_wp_error($result)) {
+            $status = self::get_status();
+            $status['last_run_list'] = array_slice(
+                array_merge(
+                    array(array('t' => time(), 'source' => $source, 'fetched' => 0, 'error' => $result->get_error_message())),
+                    isset($status['last_run_list']) && is_array($status['last_run_list']) ? $status['last_run_list'] : array()
+                ),
+                0,
+                5
+            );
+            update_option(self::OPTION_STATUS, $status, true);
+            return;
+        }
+
+        $fetched = 0;
+        $errors  = array();
+        foreach ($result['types'] as $type_result) {
+            $fetched += isset($type_result['fetched']) ? (int) $type_result['fetched'] : 0;
+            if (!empty($type_result['error'])) {
+                $errors[] = $type_result['error'];
+            }
+        }
+
+        $status = self::get_status();
+        $status['last_run']      = isset($result['started']) ? (int) $result['started'] : time();
+        $status['last_source']   = $source;
+        $status['last_fetched']  = $fetched;
+        $status['last_run_list'] = array_slice(
+            array_merge(
+                array(array('t' => time(), 'source' => $source, 'fetched' => $fetched, 'error' => implode('；', array_unique($errors)))),
+                isset($status['last_run_list']) && is_array($status['last_run_list']) ? $status['last_run_list'] : array()
+            ),
+            0,
+            5
+        );
+        update_option(self::OPTION_STATUS, $status, true);
     }
 
     /**
@@ -1361,6 +1430,7 @@ class IRO_Image_Pool
         }
 
         $result = self::refresh_all(false);
+        self::log_run($result, 'kick');
         if (is_wp_error($result)) {
             return $result;
         }
@@ -1494,9 +1564,18 @@ class IRO_Image_Pool
     {
         $status   = self::get_status();
         $required = self::required_types();
+        $sources = array(
+            'cron'   => '定时任务',
+            'kick'   => '页面触发',
+            'manual' => '后台手动',
+            'cli'    => '命令行',
+        );
         $out      = array(
-            'last_run' => (int) $status['last_run'],
-            'types'    => array(),
+            'last_run'     => (int) $status['last_run'],
+            'last_source'  => isset($sources[$status['last_source'] ?? '']) ? $sources[$status['last_source']] : '未知',
+            'last_fetched' => isset($status['last_fetched']) ? (int) $status['last_fetched'] : 0,
+            'recent'       => isset($status['last_run_list']) && is_array($status['last_run_list']) ? $status['last_run_list'] : array(),
+            'types'        => array(),
         );
 
         foreach (self::$types as $type) {
@@ -1531,6 +1610,31 @@ class IRO_Image_Pool
         }
 
         return $out;
+    }
+
+    /**
+     * 把 Unix 时间戳格式化成本地时间。
+     *
+     * 不能用 date_i18n()：它会把传入的原始 Unix 时间戳当成“已经加过时区偏移”的值，
+     * 在 UTC+8 站点上会少显示 8 小时（后台看起来像任务停在下午，实际是晚上）。
+     * wp_date() 接受真正的 Unix 时间戳，输出站点时区时间。
+     *
+     * @param int    $timestamp Unix 时间戳，0 表示未运行。
+     * @param string $empty     未运行时的占位文本。
+     * @return string
+     */
+    public static function format_time($timestamp, $empty = '—')
+    {
+        $timestamp = (int) $timestamp;
+        if ($timestamp <= 0) {
+            return $empty;
+        }
+        if (function_exists('wp_date')) {
+            return wp_date('Y-m-d H:i:s', $timestamp);
+        }
+        // 极老版本 WordPress 的兜底：按站点时区偏移手动换算。
+        $offset = (float) get_option('gmt_offset', 0) * HOUR_IN_SECONDS;
+        return gmdate('Y-m-d H:i:s', $timestamp + (int) $offset);
     }
 
     /**
@@ -1604,6 +1708,21 @@ class IRO_Image_Pool
         delete_option(self::OPTION_LOCK);
     }
 
+    /**
+     * 锁是否仍由其他任务持有。
+     *
+     * @return bool
+     */
+    private static function lock_alive()
+    {
+        $existing = (int) get_option(self::OPTION_LOCK, 0);
+        if ($existing <= 0) {
+            return false;
+        }
+        $stale = 15 * (defined('MINUTE_IN_SECONDS') ? MINUTE_IN_SECONDS : 60);
+        return (time() - $existing) < $stale;
+    }
+
     /* ---------------------------------------------------------------------
      * 后台页面
      * ------------------------------------------------------------------ */
@@ -1647,6 +1766,7 @@ class IRO_Image_Pool
             ignore_user_abort(true);
 
             $result = self::refresh_all(true);
+            self::log_run($result, 'manual');
             if (is_wp_error($result)) {
                 $notice = '<div class="notice notice-error"><p>' . esc_html($result->get_error_message()) . '</p></div>';
             } else {
@@ -1732,9 +1852,7 @@ class IRO_Image_Pool
                             <td><?php echo esc_html(size_format($info['bytes'], 1)); ?></td>
                             <td>
                                 <?php
-                                echo $info['last_fetch'] > 0
-                                    ? esc_html(date_i18n('Y-m-d H:i:s', $info['last_fetch']))
-                                    : '—';
+                                echo esc_html(self::format_time($info['last_fetch']));
                                 ?>
                             </td>
                             <td>
@@ -1749,11 +1867,36 @@ class IRO_Image_Pool
             </table>
 
             <p class="description" style="margin-top:12px;">
-                最近一次后台更新时间：
-                <?php echo $snapshot['last_run'] > 0 ? esc_html(date_i18n('Y-m-d H:i:s', $snapshot['last_run'])) : '尚未运行'; ?>；
+                最近一次实际运行：
+                <?php
+                echo esc_html(self::format_time($snapshot['last_run'], '尚未运行'));
+                if ($snapshot['last_run'] > 0) {
+                    echo '（' . esc_html($snapshot['last_source']) . '，新下载 ' . (int) $snapshot['last_fetched'] . ' 张）';
+                }
+                ?>；
+                当前时间：<strong><?php echo esc_html(self::format_time(time())); ?></strong>；
                 下一次计划任务：
-                <?php echo $next_run ? esc_html(date_i18n('Y-m-d H:i:s', $next_run)) : '未安排'; ?>。
+                <?php echo esc_html(self::format_time($next_run, '未安排')); ?>。
             </p>
+            <?php if ($next_run && $next_run < time() - 600) : ?>
+                <div class="notice notice-warning inline"><p>
+                    计划任务已到点 <?php echo esc_html(human_time_diff($next_run, time())); ?> 仍未执行：通常是站点全页缓存（W3 Total Cache / CDN）拦截了 <code>wp-cron.php</code>。
+                    请在服务器加系统 cron：<code>*/10 * * * * cd <?php echo esc_html(ABSPATH); ?> &amp;&amp; wp cron event run <?php echo esc_html(self::CRON_HOOK); ?> --quiet</code>，
+                    或在 W3TC → Page Cache 中排除 wp-cron.php / wp-json。
+                </p></div>
+            <?php endif; ?>
+            <?php if (!empty($snapshot['recent'])) : ?>
+                <p class="description">最近几次运行：</p>
+                <ul class="description" style="margin-left:18px;list-style:disc;">
+                    <?php foreach ($snapshot['recent'] as $entry) : ?>
+                        <li>
+                            <?php echo esc_html(self::format_time($entry['t'])); ?>
+                            — <?php echo esc_html($entry['source']); ?>，新下载 <?php echo (int) $entry['fetched']; ?> 张
+                            <?php echo $entry['error'] !== '' ? '，错误：' . esc_html($entry['error']) : ''; ?>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
             <p class="description">
                 图片目录：<code>wp-content/uploads/<?php echo esc_html(IRO_IMAGE_POOL_DIRNAME); ?>/</code>。
                 池内图片是公开静态文件，浏览器会长期缓存；接口本身返回 302，确保每次页面加载都重新随机。
@@ -1790,7 +1933,7 @@ class IRO_Image_Pool_CLI
                     $info['target'],
                     size_format($info['bytes'], 1),
                     $info['active'] ? 'yes' : 'no',
-                    $info['last_fetch'] > 0 ? date_i18n('Y-m-d H:i:s', $info['last_fetch']) : '-',
+                    IRO_Image_Pool::format_time($info['last_fetch'], '-'),
                     $info['last_error'] !== '' ? $info['last_error'] : '-'
                 )
             );
@@ -1807,6 +1950,7 @@ class IRO_Image_Pool_CLI
     public function refresh($args, $assoc_args)
     {
         $result = IRO_Image_Pool::refresh_all(true);
+        IRO_Image_Pool::log_run($result, 'cli');
         if (is_wp_error($result)) {
             \WP_CLI::error($result->get_error_message());
             return;
