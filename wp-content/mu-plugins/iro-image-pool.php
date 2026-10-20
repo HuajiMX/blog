@@ -253,8 +253,10 @@ class IRO_Image_Pool
     /**
      * 解析某一类图片对应的外部 API 地址。
      *
+     * 原则：主题里配置了什么地址，就原样请求什么地址，不追加、不修改任何参数。
+     *
      * - desktop：主题“桌面端随机图地址”。
-     * - mobile：主题“手机端随机图地址”，为空时退回桌面端地址，并模拟主题 JS 的 type=mobile 参数。
+     * - mobile：主题“手机端随机图地址”，为空时退回桌面端地址。
      * - post：文章特色图地址，为空时退回桌面端地址。
      *
      * @param string $type desktop|mobile|post。
@@ -282,12 +284,6 @@ class IRO_Image_Pool
 
         if ($url === '' || !preg_match('#^https?://#i', $url)) {
             return '';
-        }
-
-        // 主题前端对手机端会追加 type=mobile（Sakurairo 的 swicher/app.js 行为）。
-        // 服务端尽量按同样方式请求，保证缓存到的图与原来一致。
-        if ($type === 'mobile' && !empty(self::raw('random_graphs_mts', false))) {
-            $url = add_query_arg('type', 'mobile', $url);
         }
 
         return $url;
@@ -1654,7 +1650,7 @@ class IRO_Image_Pool
     }
 
     /**
-     * 隐去 URL 的查询参数，便于在状态里展示而不泄露 token。
+     * 展示用 URL：保留查询参数便于排查，但隐去可能泄露的鉴权参数。
      *
      * @param string $url 地址。
      * @return string
@@ -1664,10 +1660,12 @@ class IRO_Image_Pool
         if ($url === '') {
             return '';
         }
+
         $parts = wp_parse_url($url);
         if (!is_array($parts) || empty($parts['host'])) {
             return $url;
         }
+
         $masked = (isset($parts['scheme']) ? $parts['scheme'] : 'http') . '://' . $parts['host'];
         if (!empty($parts['port'])) {
             $masked .= ':' . $parts['port'];
@@ -1675,6 +1673,23 @@ class IRO_Image_Pool
         if (!empty($parts['path'])) {
             $masked .= $parts['path'];
         }
+
+        if (!empty($parts['query'])) {
+            $query = array();
+            parse_str($parts['query'], $query);
+
+            $sensitive = array('key', 'apikey', 'api_key', 'token', 'secret', 'password', 'passwd', 'sign', 'signature', 'auth', 'access_key', 'appkey');
+            foreach ($query as $name => $value) {
+                if (in_array(strtolower((string) $name), $sensitive, true)) {
+                    $query[$name] = '***';
+                }
+            }
+
+            if (!empty($query)) {
+                $masked .= '?' . http_build_query($query);
+            }
+        }
+
         return $masked;
     }
 
@@ -1817,7 +1832,7 @@ class IRO_Image_Pool
                     <tr>
                         <th>类型</th>
                         <th>状态</th>
-                        <th>原始 API（已隐藏参数）</th>
+                        <th>原始 API（鉴权参数已隐藏）</th>
                         <th>池内图片</th>
                         <th>占用空间</th>
                         <th>最近下载</th>
