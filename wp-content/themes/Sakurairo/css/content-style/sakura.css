@@ -610,12 +610,12 @@ body.dark .entry-content blockquote,
 body.dark .entry-content blockquote.wp-block-quote,
 body.dark .entry-content .wp-block-quote blockquote {
     background: rgba(255, 255, 255, .04);
-    background: color-mix(in srgb, var(--theme-skin-dark, var(--theme-skin-matching, #6aa9e9)) 10%, transparent);
+    background: color-mix(in srgb, var(--theme-skin-matching, #6aa9e9) 10%, transparent);
     color: rgba(255, 255, 255, .72);
 }
 
 body.dark .entry-content blockquote::after {
-    background: var(--theme-skin-dark, var(--theme-skin-matching, #6aa9e9));
+    background: var(--theme-skin-matching, #6aa9e9);
     opacity: .55;
 }
 
