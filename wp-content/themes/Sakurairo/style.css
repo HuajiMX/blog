@@ -3243,7 +3243,7 @@ iframe {
 
 .toc-container {
   z-index: 99;
-  width: 190px;
+  width: 220px;
   height: 100%;
   background-color: rgba(255, 255, 255, 0);
   right: -15vw;
@@ -3265,8 +3265,9 @@ iframe {
   overflow-y: auto;
   box-shadow: 0 1px 30px -4px #e8e8e8;
   background: rgba(255, 255, 255, 0.5);
-  padding: 10px 10px;
-  width: fit-content;
+  padding: 11px 10px;
+  width: 100%;
+  box-sizing: border-box;
   border-radius: 10px;
   border: 1.5px solid #FFFFFF;
 }
@@ -5239,20 +5240,22 @@ body.dark .comment .body .comment-at {
 }
 
 .toc>.toc-list li {
-  margin: 3px;
-  letter-spacing: 1px;
+  margin: 3px 0;
+  letter-spacing: 0;
 }
 
 .toc-list {
   margin: 0;
-  padding-left: 16px;
+  padding-left: 12px;
   cursor: default;
 }
 
 a.toc-link {
   color: currentColor;
   height: 100%;
-  font-size: 16px;
+  font-size: 14px;
+  letter-spacing: 0;
+  line-height: 1.6;
 }
 
 .toc-list-item > a > #text {
