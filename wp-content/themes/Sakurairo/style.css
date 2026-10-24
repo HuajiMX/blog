@@ -6784,6 +6784,14 @@ a.toc-link {
     margin-left: calc(50% - 550px);
     margin-right: auto;
   }
+
+  /* Comments sit outside .site-content; align them with the shifted article */
+  body:has(.site-content .toc-container .toc-list) .comments {
+    margin-left: calc(50% - 550px);
+    margin-right: auto;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
 }
 
 .toc .is-active-link {
