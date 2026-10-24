@@ -194,51 +194,57 @@ h1.entry-title {
     background-color: transparent !important;
 }
 
-.entry-content .highlight-wrap:before {
-    content: " ";
-    position: absolute;
-    -webkit-border-radius: 50%;
-    border-radius: 50%;
-    background: #fc625d;
-    width: 12px;
-    height: 12px;
-    left: 12px;
-    margin-top: -18px;
-    -webkit-box-shadow: 20px 0 #fdbc40, 40px 0 #35cd4b;
-    box-shadow: 20px 0 #fdbc40, 40px 0 #35cd4b;
-    z-index: 2
-}
-
-.entry-content .highlight-wrap {
+/* Code block: one flat surface from the header down to the last line */
+:is(body, .entry-content) pre.highlight-wrap {
+    --cb-bg: #1e2227;
+    --cb-border: rgba(255, 255, 255, .08);
+    --cb-text: #d7dce2;
+    --cb-muted: #6f7782;
+    --cb-header-h: 44px;
     position: relative;
-    background: #21252b;
-    border-radius: 5px;
-    font: 15px/22px 'Fira Code', 'Noto Sans SC';
-    line-height: 1.6;
-    margin-bottom: 1.6em;
-    max-width: 100%;
-    overflow: auto;
+    padding: 0;
+    margin: 1.6em 8px;
+    background: var(--cb-bg);
+    border: 1px solid var(--cb-border);
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .32);
+    font: 15px/1.65 'Fira Code', 'Noto Sans SC';
+    color: var(--cb-text);
     text-shadow: none;
-    color: #000;
-    padding-top: 30px;
-    box-shadow: 0 10px 30px 0 rgba(0, 0, 0, .4);
+    max-width: 100%;
+    overflow: hidden;
     z-index: 0;
 }
 
-.entry-content .highlight-wrap .copy-code {
-    color: #fff;
+:is(body, .entry-content) pre.highlight-wrap::before {
+    content: "";
     position: absolute;
-    float: right;
-    right: 10px;
-    top: 0;
-    padding-top: 4px;
-    padding-right: 2px;
-    z-index: 2;
-    font-size: 16px;
+    top: 16px;
+    left: 18px;
+    width: 12px;
+    height: 12px;
+    margin: 0;
+    border-radius: 50%;
+    background: #fc625d;
+    box-shadow: 20px 0 0 #fdbc40, 40px 0 0 #35cd4b;
+    z-index: 5;
 }
 
-.entry-content .highlight-wrap .copy-code:hover {
-    color: rgba(255, 255, 255, .5);
+:is(body, .entry-content) pre.highlight-wrap > .copy-code {
+    position: absolute;
+    top: 0;
+    right: 16px;
+    height: var(--cb-header-h);
+    line-height: var(--cb-header-h);
+    padding: 0;
+    color: #8b949e;
+    font-size: 15px;
+    z-index: 5;
+    transition: color .2s ease;
+}
+
+:is(body, .entry-content) pre.highlight-wrap > .copy-code:hover {
+    color: #fff;
 }
 
 .hljs-ln-line span::-moz-selection,
@@ -253,40 +259,54 @@ h1.entry-title {
     color: #21252b
 }
 
-.entry-content .highlight-wrap code {
-    background: #1d1f21;
-    color: #fff;
-    word-break: break-word;
-    font-family: 'Fira Code', 'Noto Sans SC';
-    padding: 2px;
+:is(body, .entry-content) pre.highlight-wrap > code {
+    display: block;
+    box-sizing: border-box;
+    padding: 16px 0;
+    background: transparent;
+    color: var(--cb-text);
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
     text-shadow: none;
-    border-radius: 0 0 5px 5px;
+    white-space: pre;
+    word-break: normal;
+    overflow-wrap: normal;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-radius: 0 0 12px 12px;
+    tab-size: 4;
 }
 
-.entry-content .highlight-wrap code[data-rel]:before {
-    color: #fff;
+:is(body, .entry-content) pre.highlight-wrap > code[data-rel] {
+    padding-top: calc(var(--cb-header-h) + 12px);
+}
+
+:is(body, .entry-content) pre.highlight-wrap > code[data-rel]::before {
     content: attr(data-rel);
-    height: 30px;
-    line-height: 30px;
-    background: #21252b;
-    font-size: 16px;
     position: absolute;
-    margin-top: -30px;
+    top: 0;
     left: 0;
-    width: 100%;
-    font-family: 'Fira Code', 'Noto Sans SC';
-    font-weight: 700;
-    padding: 0 80px;
-    text-indent: 15px;
+    right: 0;
+    height: var(--cb-header-h);
+    line-height: var(--cb-header-h);
+    padding: 0 96px;
+    box-sizing: border-box;
+    background: var(--cb-bg);
+    border-bottom: 1px solid var(--cb-border);
+    border-radius: 12px 12px 0 0;
+    color: #e8edf3;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .08em;
     text-align: center;
-    float: left;
-    z-index: 1;
-    border-radius: 5px 5px 0 0;
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
-    border-bottom-right-radius: 0;
-    border-bottom-left-radius: 0;
-    pointer-events: none
+    text-indent: 0;
+    float: none;
+    width: auto;
+    margin: 0;
+    z-index: 3;
+    pointer-events: none;
 }
 
 .hljs {
@@ -367,58 +387,130 @@ h1.entry-title {
     text-decoration: underline
 }
 
-.hljs-ln {
-    margin: 6px 0 0 0 !important
+:is(body, .entry-content) pre.highlight-wrap table.hljs-ln {
+    width: 100%;
+    margin: 0 !important;
+    border-collapse: collapse;
+    border-spacing: 0;
+    background: transparent;
 }
 
-td.hljs-ln-numbers {
+:is(body, .entry-content) pre.highlight-wrap table.hljs-ln tr,
+:is(body, .entry-content) pre.highlight-wrap table.hljs-ln td {
+    background: transparent;
+    border: 0;
+}
+
+:is(body, .entry-content) pre.highlight-wrap td.hljs-ln-numbers {
+    position: static;
+    width: 52px;
+    min-width: 52px;
+    padding: 0 12px 0 14px;
+    color: var(--cb-muted);
+    background: transparent;
+    text-align: right;
+    vertical-align: top;
+    font-family: inherit;
+    font-size: 12px;
+    line-height: inherit;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    border-right: 1px solid rgba(255, 255, 255, .05);
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     -khtml-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
-    text-align: center;
-    color: #888f96;
-    background: #1d1f21;
-    font-family: 'Fira Code', 'Noto Sans SC';
+}
+
+:is(body, .entry-content) pre.highlight-wrap td.hljs-ln-code {
+    margin: 0 !important;
+    padding: 0 18px 0 16px !important;
+    white-space: pre;
+    word-break: normal;
+    overflow-wrap: normal;
     vertical-align: top;
-    position: absolute;
-    left: 0;
-    width: 30px
 }
 
-.hljs-ln-code.hljs-ln-line {
-    margin-left: 25px;
-    padding-left: 30px
+:is(body, .entry-content) pre.highlight-wrap table.hljs-ln tr:hover td {
+    background: rgba(255, 255, 255, .035);
 }
 
-.hljs-ln-code.hljs-ln-line:hover {
-    background-color: rgba(255, 255, 255, .1)
+:is(body, .entry-content) pre.highlight-wrap table.hljs-ln tr:hover td.hljs-ln-numbers {
+    color: #9aa4b2;
 }
 
-.code-block-fullscreen {
+:is(body, .entry-content) pre.highlight-wrap.code-block-fullscreen {
     position: fixed;
-    top: 0;
-    left: 0;
+    inset: 0;
     width: 100%;
     height: 100%;
-    min-width: 100%;
-    z-index: 999;
+    max-width: none;
     margin: 0;
-    animation: elastic 1s
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    z-index: 999;
+    animation: elastic 1s;
 }
 
-.code-block-fullscreen code {
-    --widthA: 100%;
-    --widthB: calc(var(--widthA) - 30px);
-    height: var(--widthB);
-    min-height: 99%;
-    overflow-y: hidden;
+:is(body, .entry-content) pre.highlight-wrap.code-block-fullscreen > code {
+    min-height: 100vh;
+    max-height: 100vh;
     overflow-x: auto;
-    height: auto
+    overflow-y: auto;
 }
 
 .code-block-fullscreen-html-scroll {
     overflow: hidden
+}
+
+:is(body, .entry-content) pre.highlight-wrap > code::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+    background: transparent;
+}
+
+:is(body, .entry-content) pre.highlight-wrap > code::-webkit-scrollbar-track {
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+:is(body, .entry-content) pre.highlight-wrap > code::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, .18) !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+}
+
+:is(body, .entry-content) pre.highlight-wrap > code::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, .3) !important;
+}
+
+@media (max-width: 768px) {
+    :is(body, .entry-content) pre.highlight-wrap {
+        --cb-header-h: 40px;
+        margin: 1.2em 0;
+        border-radius: 10px;
+        font-size: 13px;
+    }
+
+    :is(body, .entry-content) pre.highlight-wrap > code[data-rel]::before {
+        padding: 0 72px;
+        font-size: 12px;
+    }
+
+    :is(body, .entry-content) pre.highlight-wrap td.hljs-ln-numbers {
+        width: 44px;
+        min-width: 44px;
+        padding: 0 10px 0 12px;
+    }
+
+    :is(body, .entry-content) pre.highlight-wrap td.hljs-ln-code {
+        padding: 0 14px 0 12px !important;
+    }
+
+    :is(body, .entry-content) pre.highlight-wrap > .copy-code {
+        right: 12px;
+    }
 }

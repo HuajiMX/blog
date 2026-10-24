@@ -518,7 +518,8 @@ function sakura_scripts()
         $content_style = (iro_opt('entry_content_style') == 'sakurairo' ? 'sakura' : 'github');
         // 用 .css 路径暴露给浏览器/CDN，Nginx 内部再重写到 css/index.php 动态生成。
         // 这样 CDN 的静态缓存规则能命中，不会被 /*.php 不缓存规则误伤。
-        $iro_css = get_template_directory_uri() . '/css/theme.css?' . $sakura_header . '&' . $content_style . '&' . $wave . '&minify&' . IRO_VERSION;
+        $iro_css_ver = @filemtime(get_template_directory() . '/css/content-style/' . $content_style . '.css') ?: IRO_VERSION;
+        $iro_css = get_template_directory_uri() . '/css/theme.css?' . $sakura_header . '&' . $content_style . '&' . $wave . '&minify&' . IRO_VERSION . '&cb=' . $iro_css_ver;
         add_action('wp_head', function() use ($iro_css) {
             echo '<link rel="preload" href="' .$iro_css. '" as="style" onload="this.onload=null;this.rel=\'stylesheet\'">';
             echo '<link rel="stylesheet" href="' . $iro_css . '">';
@@ -533,11 +534,12 @@ function sakura_scripts()
         wp_enqueue_style('iro-templates', $core_lib_basepath . '/css/templates.css', array('iro-css'), IRO_VERSION);
 
         $content_style = (iro_opt('entry_content_style') == 'sakurairo' ? 'sakura' : 'github');
+        $entry_content_ver = @filemtime(get_template_directory() . '/css/content-style/' . $content_style . '.css') ?: IRO_VERSION;
         wp_enqueue_style(
             'entry-content',
             $core_lib_basepath . '/css/content-style/' . $content_style . '.css',
             array(),
-            IRO_VERSION
+            $entry_content_ver
         );
         if (iro_opt('wave_effects', 'false')){
             wp_enqueue_style('wave', $core_lib_basepath . '/css/wave.css', array(), IRO_VERSION);
