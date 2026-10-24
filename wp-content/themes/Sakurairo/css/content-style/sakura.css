@@ -510,17 +510,17 @@ h1.entry-title {
     }
 }
 
-/* Blockquote: Flarum-like left rule, no quote glyphs or card background */
+/* Blockquote: soft theme-tinted card with a rounded left rule */
 .entry-content blockquote,
 .entry-content blockquote.wp-block-quote,
 .entry-content .wp-block-quote blockquote {
     position: relative;
     margin: 1.8em 0;
-    padding: 2px 0 2px 22px;
+    padding: 16px 20px 16px 22px;
     border: 0;
-    border-left: 3px solid var(--theme-skin-matching, #6aa9e9);
-    border-radius: 0;
-    background: transparent;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, .025);
+    background: color-mix(in srgb, var(--theme-skin-matching, #6aa9e9) 8%, transparent);
     color: #5f6368;
     font-style: normal;
     line-height: 1.85;
@@ -533,6 +533,22 @@ h1.entry-title {
 .entry-content .wp-block-quote blockquote::after {
     display: none !important;
     content: none !important;
+}
+
+/* The rounded rule sits inside the card, not on its edge */
+.entry-content blockquote::after,
+.entry-content blockquote.wp-block-quote::after,
+.entry-content .wp-block-quote blockquote::after {
+    content: "" !important;
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 12px;
+    bottom: 12px;
+    width: 3px;
+    border-radius: 3px;
+    background: var(--theme-skin-matching, #6aa9e9);
+    opacity: .6;
 }
 
 .entry-content blockquote p,
@@ -564,9 +580,16 @@ h1.entry-title {
 
 .entry-content blockquote blockquote {
     margin: 1em 0 0;
-    padding-left: 16px;
-    border-left-width: 2px;
+    padding: 0 0 0 16px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     color: #6b7078;
+}
+
+.entry-content blockquote blockquote::after {
+    display: none !important;
+    content: none !important;
 }
 
 @media (max-width: 860px) {
@@ -574,7 +597,7 @@ h1.entry-title {
     .entry-content blockquote.wp-block-quote,
     .entry-content .wp-block-quote blockquote {
         margin: 1.4em 0;
-        padding: 2px 0 2px 16px !important;
+        padding: 14px 16px 14px 20px !important;
     }
 
     .entry-content blockquote p,
@@ -586,8 +609,23 @@ h1.entry-title {
 body.dark .entry-content blockquote,
 body.dark .entry-content blockquote.wp-block-quote,
 body.dark .entry-content .wp-block-quote blockquote {
-    border-left-color: var(--theme-skin-dark, var(--theme-skin-matching, #6aa9e9));
+    background: rgba(255, 255, 255, .04);
+    background: color-mix(in srgb, var(--theme-skin-dark, var(--theme-skin-matching, #6aa9e9)) 10%, transparent);
     color: rgba(255, 255, 255, .72);
+}
+
+body.dark .entry-content blockquote::after {
+    background: var(--theme-skin-dark, var(--theme-skin-matching, #6aa9e9));
+    opacity: .55;
+}
+
+body.dark .entry-content blockquote blockquote {
+    background: transparent;
+}
+
+body.dark .entry-content blockquote blockquote::after {
+    display: none !important;
+    content: none !important;
 }
 
 body.dark .entry-content blockquote cite {
