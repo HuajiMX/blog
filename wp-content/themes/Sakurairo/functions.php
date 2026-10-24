@@ -569,6 +569,7 @@ function sakura_scripts()
         if (!is_home()) {
             //非主页的资源
             wp_enqueue_script('app-page', $core_lib_basepath . '/js/page.js', array('app', 'polyfills'), IRO_VERSION, true);
+            wp_enqueue_script('toc-active-scroll', get_template_directory_uri() . '/js/toc-active-scroll.js', array('app-page'), @filemtime(get_template_directory() . '/js/toc-active-scroll.js') ?: IRO_VERSION, true);
         }
     }
     wp_enqueue_script('polyfills', $core_lib_basepath . '/js/polyfill.js', array(), IRO_VERSION, true);
