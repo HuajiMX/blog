@@ -6773,3 +6773,15 @@ a.toc-link {
 	color: inherit;
 	border-radius: 0px;
 }
+
+/* Desktop: keep a fixed gutter between article and TOC, and center the pair */
+@media (min-width: 1161px) {
+  .toc-container {
+    right: -260px;
+  }
+
+  .site-content:has(.toc-container .toc-list) {
+    margin-left: calc(50% - 550px);
+    margin-right: auto;
+  }
+}
