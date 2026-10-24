@@ -518,7 +518,22 @@ function sakura_scripts()
         $content_style = (iro_opt('entry_content_style') == 'sakurairo' ? 'sakura' : 'github');
         // 用 .css 路径暴露给浏览器/CDN，Nginx 内部再重写到 css/index.php 动态生成。
         // 这样 CDN 的静态缓存规则能命中，不会被 /*.php 不缓存规则误伤。
-        $iro_css_ver = @filemtime(get_template_directory() . '/css/content-style/' . $content_style . '.css') ?: IRO_VERSION;
+        $iro_css_ver = 0;
+        foreach (array(
+            '/style.css',
+            '/css/shortcodes.css',
+            '/css/dark.css',
+            '/css/responsive.css',
+            '/css/animation.css',
+            '/css/templates.css',
+            '/css/content-style/' . $content_style . '.css',
+        ) as $iro_css_file) {
+            $iro_css_mtime = @filemtime(get_template_directory() . $iro_css_file);
+            if ($iro_css_mtime && $iro_css_mtime > $iro_css_ver) {
+                $iro_css_ver = $iro_css_mtime;
+            }
+        }
+        $iro_css_ver = $iro_css_ver ?: IRO_VERSION;
         $iro_css = get_template_directory_uri() . '/css/theme.css?' . $sakura_header . '&' . $content_style . '&' . $wave . '&minify&' . IRO_VERSION . '&cb=' . $iro_css_ver;
         add_action('wp_head', function() use ($iro_css) {
             echo '<link rel="preload" href="' .$iro_css. '" as="style" onload="this.onload=null;this.rel=\'stylesheet\'">';
@@ -526,7 +541,7 @@ function sakura_scripts()
         }, 9);
 
     } else {        
-        wp_enqueue_style('iro-css', $core_lib_basepath . '/style.css', array(), IRO_VERSION);
+        wp_enqueue_style('iro-css', $core_lib_basepath . '/style.css', array(), @filemtime(get_template_directory() . '/style.css') ?: IRO_VERSION);
         wp_enqueue_style('iro-codes', $core_lib_basepath . '/css/shortcodes.css', array(), IRO_VERSION);
         wp_enqueue_style('iro-dark', $core_lib_basepath . '/css/dark.css', array('iro-css'), IRO_VERSION);
         wp_enqueue_style('iro-responsive', $core_lib_basepath . '/css/responsive.css', array('iro-css'), IRO_VERSION);
