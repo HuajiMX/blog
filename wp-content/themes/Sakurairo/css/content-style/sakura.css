@@ -150,17 +150,6 @@ h1.entry-title {
     background: 0 0
 }
 
-.entry-content hr:before:not(.wp-block-separator) {
-    content: '...';
-    display: inline-block;
-    margin-left: .6em;
-    color: rgba(0, 0, 0, .8);
-    position: relative;
-    top: -30px;
-    font-size: 28px;
-    letter-spacing: .6em
-}
-
 .entry-content table {
     border-collapse: collapse;
     width: 100%;
@@ -608,4 +597,28 @@ body.dark .entry-content blockquote cite {
 body.dark .entry-content blockquote p,
 body.dark .entry-content .wp-block-quote blockquote p {
     color: rgba(255, 255, 255, .75);
+}
+
+/* HR: visible divider (the old hr::before rule used an invalid selector) */
+.entry-content hr:not(.wp-block-separator) {
+    display: block;
+    width: 64px;
+    height: 3px;
+    margin: 2.4em auto;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: var(--theme-skin-matching, #a4cdf6);
+    opacity: .55;
+}
+
+.entry-content hr:not(.wp-block-separator)::before,
+.entry-content hr:not(.wp-block-separator)::after {
+    content: none !important;
+    display: none !important;
+}
+
+body.dark .entry-content hr:not(.wp-block-separator) {
+    background: var(--theme-skin-dark, var(--theme-skin-matching, #a4cdf6));
+    opacity: .65;
 }
