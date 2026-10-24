@@ -520,3 +520,92 @@ h1.entry-title {
         right: 12px;
     }
 }
+
+/* Blockquote: Flarum-like left rule, no quote glyphs or card background */
+.entry-content blockquote,
+.entry-content blockquote.wp-block-quote,
+.entry-content .wp-block-quote blockquote {
+    position: relative;
+    margin: 1.8em 0;
+    padding: 2px 0 2px 22px;
+    border: 0;
+    border-left: 3px solid var(--theme-skin-matching, #6aa9e9);
+    border-radius: 0;
+    background: transparent;
+    color: #5f6368;
+    font-style: normal;
+    line-height: 1.85;
+    quotes: none;
+}
+
+.entry-content blockquote::before,
+.entry-content blockquote::after,
+.entry-content .wp-block-quote blockquote::before,
+.entry-content .wp-block-quote blockquote::after {
+    display: none !important;
+    content: none !important;
+}
+
+.entry-content blockquote p,
+.entry-content .wp-block-quote blockquote p {
+    margin: 0 0 .9em;
+    padding-left: 0;
+    color: #555b63;
+}
+
+.entry-content blockquote p:last-child,
+.entry-content .wp-block-quote blockquote p:last-child {
+    margin-bottom: 0;
+}
+
+.entry-content blockquote a,
+.entry-content .wp-block-quote blockquote a {
+    text-decoration: underline;
+    text-underline-offset: .18em;
+}
+
+.entry-content blockquote cite,
+.entry-content .wp-block-quote blockquote cite {
+    display: block;
+    margin-top: .7em;
+    color: #8a9099;
+    font-size: .86em;
+    font-style: normal;
+}
+
+.entry-content blockquote blockquote {
+    margin: 1em 0 0;
+    padding-left: 16px;
+    border-left-width: 2px;
+    color: #6b7078;
+}
+
+@media (max-width: 860px) {
+    .entry-content blockquote,
+    .entry-content blockquote.wp-block-quote,
+    .entry-content .wp-block-quote blockquote {
+        margin: 1.4em 0;
+        padding: 2px 0 2px 16px !important;
+    }
+
+    .entry-content blockquote p,
+    .entry-content .wp-block-quote blockquote p {
+        padding-left: 0 !important;
+    }
+}
+
+body.dark .entry-content blockquote,
+body.dark .entry-content blockquote.wp-block-quote,
+body.dark .entry-content .wp-block-quote blockquote {
+    border-left-color: var(--theme-skin-dark, var(--theme-skin-matching, #6aa9e9));
+    color: rgba(255, 255, 255, .72);
+}
+
+body.dark .entry-content blockquote cite {
+    color: rgba(255, 255, 255, .45);
+}
+
+body.dark .entry-content blockquote p,
+body.dark .entry-content .wp-block-quote blockquote p {
+    color: rgba(255, 255, 255, .75);
+}
