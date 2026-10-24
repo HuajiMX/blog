@@ -660,3 +660,32 @@ body.dark .entry-content hr:not(.wp-block-separator) {
     background: var(--theme-skin-dark, var(--theme-skin-matching, #a4cdf6));
     opacity: .65;
 }
+
+/* Text links: persistent underline instead of hover-only */
+.entry-content p a:not(.wp-block-button__link):not(.more-link):not(:has(> img)),
+.entry-content li a:not(.wp-block-button__link):not(.more-link):not(:has(> img)),
+.entry-content blockquote a,
+.entry-content table a,
+.entry-content figcaption a,
+.entry-content dd a {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    text-decoration-color: currentColor;
+}
+
+.entry-content p a:hover:not(.wp-block-button__link):not(.more-link),
+.entry-content li a:hover:not(.wp-block-button__link):not(.more-link),
+.entry-content blockquote a:hover,
+.entry-content table a:hover,
+.entry-content figcaption a:hover,
+.entry-content dd a:hover {
+    text-decoration-thickness: 2px;
+}
+
+/* Buttons, more links and image links keep no underline */
+.entry-content a.wp-block-button__link,
+.entry-content a.more-link,
+.entry-content a:has(> img) {
+    text-decoration: none !important;
+}
