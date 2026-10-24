@@ -6789,3 +6789,7 @@ a.toc-link {
 .toc .is-active-link {
   color: var(--article-theme-highlight, var(--theme-skin-matching));
 }
+
+.toc .katex {
+  font-size: 1em;
+}
