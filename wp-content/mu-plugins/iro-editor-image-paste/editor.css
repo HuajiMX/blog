@@ -1,0 +1,183 @@
+/**
+ * IRO Editor Image Paste
+ *
+ * 只负责两件事：拖入图片时覆盖在编辑器上的提示层，以及右下角的上传状态提示。
+ * 不修改 CodeMirror / Githuber MD 的既有样式。
+ */
+
+/* -------------------------------------------------------------------------
+ * 拖放提示层
+ * ---------------------------------------------------------------------- */
+
+.iro-image-paste-drop {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(34, 113, 177, 0.08);
+    border: 2px dashed #2271b1;
+    border-radius: 4px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.16s ease, visibility 0.16s ease;
+}
+
+.CodeMirror.iro-image-paste-dragging .iro-image-paste-drop {
+    opacity: 1;
+    visibility: visible;
+}
+
+.iro-image-paste-drop__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 220px;
+    padding: 20px 28px;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(34, 113, 177, 0.18);
+    border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
+    color: #1d2327;
+    text-align: center;
+}
+
+.iro-image-paste-drop__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    margin-bottom: 2px;
+    color: #2271b1;
+}
+
+.iro-image-paste-drop__icon svg {
+    display: block;
+}
+
+.iro-image-paste-drop__inner strong {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.iro-image-paste-drop__inner small {
+    color: #646970;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+/* -------------------------------------------------------------------------
+ * 右下角上传状态提示
+ * ---------------------------------------------------------------------- */
+
+#iro-image-paste-toasts {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 100000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    width: min(360px, calc(100vw - 32px));
+    pointer-events: none;
+}
+
+.iro-image-paste-toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 100%;
+    padding: 11px 14px;
+    background: #fff;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-left: 4px solid #2271b1;
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+    color: #1d2327;
+    font-size: 13px;
+    line-height: 1.45;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.iro-image-paste-toast.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.iro-image-paste-toast.is-success {
+    border-left-color: #00a32a;
+}
+
+.iro-image-paste-toast.is-error {
+    border-left-color: #d63638;
+}
+
+.iro-image-paste-toast__icon {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    color: #2271b1;
+}
+
+.iro-image-paste-toast__icon svg {
+    display: block;
+}
+
+.iro-image-paste-toast__text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.iro-image-paste-toast.is-progress .iro-image-paste-toast__icon {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(34, 113, 177, 0.22);
+    border-top-color: #2271b1;
+    border-radius: 50%;
+    animation: iro-image-paste-spin 0.7s linear infinite;
+}
+
+.iro-image-paste-toast.is-success .iro-image-paste-toast__icon {
+    color: #00a32a;
+}
+
+.iro-image-paste-toast.is-error .iro-image-paste-toast__icon {
+    color: #d63638;
+}
+
+@keyframes iro-image-paste-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 782px) {
+    #iro-image-paste-toasts {
+        right: 16px;
+        bottom: 16px;
+        width: calc(100vw - 32px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .iro-image-paste-drop,
+    .iro-image-paste-toast {
+        transition: none;
+    }
+
+    .iro-image-paste-toast.is-progress .iro-image-paste-toast__icon {
+        animation-duration: 1.4s;
+    }
+}
