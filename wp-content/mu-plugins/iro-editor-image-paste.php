@@ -97,15 +97,25 @@ function iro_editor_image_paste_enqueue($hook_suffix)
         return;
     }
 
-    // 只有 Githuber MD 编辑器真的排入当前页面时才需要这些资源。
-    // 优先级 100 保证在 Githuber MD（优先级 10）之后判断。
-    if (!wp_script_is('githuber-md', 'enqueued')) {
+    if (!function_exists('githuber_get_option')) {
         return;
     }
 
     $screen = get_current_screen();
 
-    if ($screen && !post_type_supports($screen->post_type, 'githuber_markdown')) {
+    if (!$screen || !post_type_supports($screen->post_type, 'githuber_markdown')) {
+        return;
+    }
+
+    $current_post_id = function_exists('githuber_get_current_post_id') ? (int) githuber_get_current_post_id() : 0;
+    $markdown_this_post = $current_post_id ? get_metadata('post', $current_post_id, '_is_githuber_markdown_enabled', true) : '';
+
+    if ('no' === $markdown_this_post) {
+        return;
+    }
+
+    // 与 Githuber MD 的“默认使用富文本编辑器”开关保持一致。
+    if ('yes' === githuber_get_option('richeditor_by_default', 'githuber_preferences') && 'yes' !== $markdown_this_post) {
         return;
     }
 
@@ -124,7 +134,7 @@ function iro_editor_image_paste_enqueue($hook_suffix)
     wp_enqueue_script(
         'iro-editor-image-paste',
         IRO_EDITOR_IMAGE_PASTE_URL . '/editor.js',
-        array('githuber-md'),
+        array(),
         $script_version,
         true
     );
@@ -156,7 +166,10 @@ function iro_editor_image_paste_enqueue($hook_suffix)
         )
     );
 }
-add_action('admin_enqueue_scripts', 'iro_editor_image_paste_enqueue', 100);
+// 优先级 5：比 Githuber MD 的编辑器脚本更早入队。
+// editor.js 会轮询等待 githuber_md_editor，所以不需要依赖 githuber-md 句柄；
+// 这样可以避免编辑器已经出现、但粘贴脚本还排在队尾没加载的空窗期。
+add_action('admin_enqueue_scripts', 'iro_editor_image_paste_enqueue', 5);
 
 /**
  * 把 PHP 上传错误码转成可读提示。
