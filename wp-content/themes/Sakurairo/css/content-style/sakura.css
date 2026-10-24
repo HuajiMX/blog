@@ -282,6 +282,12 @@ h1.entry-title {
     padding-top: calc(var(--cb-header-h) + 12px);
 }
 
+/* One-line blocks get no line-number table until the plugin builds one. */
+:is(body, .entry-content) pre.highlight-wrap > code:not(:has(> table.hljs-ln)) {
+    padding-left: 16px;
+    padding-right: 18px;
+}
+
 :is(body, .entry-content) pre.highlight-wrap > code[data-rel]::before {
     content: attr(data-rel);
     position: absolute;
