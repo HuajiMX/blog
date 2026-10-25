@@ -624,6 +624,27 @@ function sakura_scripts()
         // 主题自带同名文件，改为同源加载，省掉一次 404 往返。
         wp_enqueue_script('SmoothScroll', get_template_directory_uri() . '/js/smoothscroll.js', array(), IRO_VERSION . iro_opt('cookie_version', ''), true);
     }
+
+    // 文章图片灯箱；主题内置 lightbox 开启时交给内置方案，避免重复绑定
+    $iro_builtin_lightbox = iro_opt('lightbox');
+    if (is_singular() && (!$iro_builtin_lightbox || $iro_builtin_lightbox === 'off')) {
+        $iro_lightbox_css = '/css/iro-lightbox.css';
+        $iro_lightbox_js = '/js/iro-lightbox.js';
+
+        wp_enqueue_style(
+            'iro-lightbox',
+            get_template_directory_uri() . $iro_lightbox_css,
+            array(),
+            @filemtime(get_template_directory() . $iro_lightbox_css) ?: IRO_VERSION
+        );
+        wp_enqueue_script(
+            'iro-lightbox',
+            get_template_directory_uri() . $iro_lightbox_js,
+            array(),
+            @filemtime(get_template_directory() . $iro_lightbox_js) ?: IRO_VERSION,
+            true
+        );
+    }
 }
 add_action('wp_enqueue_scripts', 'sakura_scripts');
 
