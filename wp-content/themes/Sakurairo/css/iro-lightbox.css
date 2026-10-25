@@ -1,13 +1,11 @@
 /**
  * 文章图片灯箱
  *
- * 独立的轻量灯箱，仅在文章/页面正文中启用。
- * 视觉沿用站点的玻璃拟态、圆角卡片与柔和光晕。
+ * 工具型组件：只保留浏览图片所需的遮罩、导航与说明。
+ * 使用中性黑白色，不跟随文章主题色，也不做装饰性光晕。
  */
 
 .iro-lightbox {
-  --iro-lb-accent: var(--article-theme-highlight, var(--theme-skin-matching, #a4cdf6));
-  --iro-lb-radius: 22px;
   --iro-lb-ease: cubic-bezier(0.22, 0.8, 0.3, 1);
   position: fixed;
   inset: 0;
@@ -21,7 +19,7 @@
   text-align: initial;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.26s ease, visibility 0.26s ease;
+  transition: opacity 0.18s ease, visibility 0.18s ease;
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
 }
@@ -35,53 +33,13 @@
   visibility: visible;
 }
 
-/* 背景：深蓝夜色 + 主题色光晕，配合毛玻璃 */
+/* 中性遮罩；只做背景压暗，不叠加主题色或装饰光效 */
 .iro-lightbox__backdrop {
   position: absolute;
   inset: 0;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 50% 18%, rgba(74, 92, 140, 0.34), transparent 62%),
-    rgba(8, 10, 18, 0.86);
-  -webkit-backdrop-filter: blur(18px) saturate(1.25);
-  backdrop-filter: blur(18px) saturate(1.25);
-}
-
-.iro-lightbox__backdrop::before,
-.iro-lightbox__backdrop::after {
-  content: "";
-  position: absolute;
-  width: 46vmax;
-  height: 46vmax;
-  border-radius: 50%;
-  pointer-events: none;
-  filter: blur(90px);
-  background: var(--iro-lb-accent);
-  opacity: 0.2;
-  will-change: transform;
-}
-
-.iro-lightbox__backdrop::before {
-  top: -18vmax;
-  left: -12vmax;
-  animation: iro-lb-glow 14s ease-in-out infinite alternate;
-}
-
-.iro-lightbox__backdrop::after {
-  right: -14vmax;
-  bottom: -22vmax;
-  background: #ff9ec7;
-  opacity: 0.12;
-  animation: iro-lb-glow 18s ease-in-out infinite alternate-reverse;
-}
-
-@keyframes iro-lb-glow {
-  from {
-    transform: translate3d(-2%, -1%, 0) scale(1);
-  }
-  to {
-    transform: translate3d(3%, 2%, 0) scale(1.08);
-  }
+  background: rgba(0, 0, 0, 0.92);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
 }
 
 .iro-lightbox__stage {
@@ -92,25 +50,23 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  padding: clamp(64px, 9vh, 100px) clamp(56px, 8vw, 110px) clamp(24px, 5vh, 54px);
+  padding: clamp(56px, 8vh, 84px) clamp(44px, 7vw, 96px) clamp(20px, 4vh, 40px);
   box-sizing: border-box;
   overflow: hidden;
   touch-action: none;
   opacity: 0;
-  transform: scale(0.985);
-  transition: opacity 0.26s ease, transform 0.32s var(--iro-lb-ease);
+  transition: opacity 0.18s ease;
 }
 
 .iro-lightbox.is-open .iro-lightbox__stage {
   opacity: 1;
-  transform: none;
 }
 
 .iro-lightbox__topbar {
   position: absolute;
-  top: clamp(14px, 3vh, 26px);
-  right: clamp(14px, 3vw, 30px);
-  left: clamp(14px, 3vw, 30px);
+  top: clamp(12px, 2.5vh, 20px);
+  right: clamp(12px, 2.5vw, 24px);
+  left: clamp(12px, 2.5vw, 24px);
   z-index: 5;
   display: flex;
   align-items: center;
@@ -123,35 +79,17 @@
   pointer-events: auto;
 }
 
+/* 计数是说明文字，不做胶囊容器 */
 .iro-lightbox__counter {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 38px;
-  padding: 0 15px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.09);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-  backdrop-filter: blur(14px) saturate(1.4);
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(255, 255, 255, 0.62);
   font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
+  font-weight: 500;
+  letter-spacing: 0.08em;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
-.iro-lightbox__counter::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--iro-lb-accent);
-  box-shadow: 0 0 10px var(--iro-lb-accent);
-}
-
+/* 按钮默认透明，仅在悬停/聚焦时出现中性底色 */
 .iro-lightbox__close,
 .iro-lightbox__nav {
   -webkit-appearance: none;
@@ -161,20 +99,13 @@
   justify-content: center;
   box-sizing: border-box;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.09);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.14);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-  backdrop-filter: blur(14px) saturate(1.4);
-  color: #fff;
+  background: transparent;
+  box-shadow: none;
+  color: rgba(255, 255, 255, 0.88);
   cursor: pointer;
-  transition:
-    background 0.22s ease,
-    border-color 0.22s ease,
-    transform 0.22s var(--iro-lb-ease),
-    box-shadow 0.22s ease,
-    opacity 0.22s ease;
+  transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
 }
 
 .iro-lightbox__close {
@@ -183,27 +114,23 @@
 }
 
 .iro-lightbox__close:hover,
+.iro-lightbox__close:focus,
 .iro-lightbox__close:focus-visible,
+.iro-lightbox__close:active,
 .iro-lightbox__nav:hover,
-.iro-lightbox__nav:focus-visible {
-  border-color: var(--iro-lb-accent);
-  background: color-mix(in srgb, var(--iro-lb-accent) 34%, rgba(255, 255, 255, 0.12));
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28), 0 0 26px -4px var(--iro-lb-accent);
-  outline: none;
-}
-
-.iro-lightbox__close:hover {
-  transform: translateY(-1px);
+.iro-lightbox__nav:focus,
+.iro-lightbox__nav:focus-visible,
+.iro-lightbox__nav:active {
+  border: 0;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+  color: #fff;
 }
 
 .iro-lightbox__close:focus-visible,
 .iro-lightbox__nav:focus-visible {
-  outline: 2px solid var(--iro-lb-accent);
-  outline-offset: 3px;
-}
-
-.iro-lightbox__close:active {
-  transform: scale(0.96);
+  outline: 2px solid rgba(255, 255, 255, 0.92);
+  outline-offset: 2px;
 }
 
 .iro-lightbox svg {
@@ -222,21 +149,17 @@
   position: absolute;
   top: 50%;
   z-index: 4;
-  width: 54px;
-  height: 54px;
+  width: 52px;
+  height: 52px;
   transform: translateY(-50%);
 }
 
 .iro-lightbox__nav--prev {
-  left: clamp(10px, 3vw, 34px);
+  left: clamp(8px, 2vw, 24px);
 }
 
 .iro-lightbox__nav--next {
-  right: clamp(10px, 3vw, 34px);
-}
-
-.iro-lightbox__nav:hover {
-  transform: translateY(-50%) scale(1.06);
+  right: clamp(8px, 2vw, 24px);
 }
 
 .iro-lightbox__nav:disabled {
@@ -272,24 +195,22 @@
   max-width: 100%;
 }
 
+/* 原图完整展示：直角、无阴影、无背景装饰 */
 .iro-lightbox__image {
   display: block;
   width: auto;
   height: auto;
-  max-width: min(1180px, calc(100vw - clamp(112px, 16vw, 220px)));
-  max-height: calc(100vh - 200px);
-  max-height: calc(100dvh - 200px);
-  border-radius: var(--iro-lb-radius);
-  background: rgba(255, 255, 255, 0.035);
-  box-shadow:
-    0 30px 80px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.14),
-    0 0 60px -20px var(--iro-lb-accent);
+  max-width: min(1180px, calc(100vw - clamp(88px, 14vw, 192px)));
+  max-height: calc(100vh - 180px);
+  max-height: calc(100dvh - 180px);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   opacity: 0;
   transform: translate3d(var(--iro-lb-pan-x, 0px), var(--iro-lb-pan-y, 0px), 0)
     scale(var(--iro-lb-zoom, 1));
   transform-origin: 50% 50%;
-  transition: opacity 0.28s ease, transform 0.3s var(--iro-lb-ease), box-shadow 0.3s ease;
+  transition: opacity 0.2s ease, transform 0.2s var(--iro-lb-ease);
   cursor: zoom-in;
   -webkit-user-select: none;
   user-select: none;
@@ -308,7 +229,7 @@
 
 .iro-lightbox__image.is-dragging {
   cursor: grabbing;
-  transition: opacity 0.28s ease, box-shadow 0.3s ease;
+  transition: opacity 0.2s ease;
 }
 
 .iro-lightbox__image.is-error {
@@ -322,8 +243,8 @@
   width: 32px;
   height: 32px;
   margin: -16px 0 0 -16px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-top-color: var(--iro-lb-accent);
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-top-color: rgba(255, 255, 255, 0.9);
   border-radius: 50%;
   opacity: 0;
   pointer-events: none;
@@ -341,6 +262,7 @@
   }
 }
 
+/* 错误提示同样保持纯文字，不加卡片装饰 */
 .iro-lightbox__error {
   display: flex;
   align-items: center;
@@ -348,10 +270,7 @@
   min-width: 240px;
   min-height: 140px;
   padding: 24px;
-  border: 1px dashed rgba(255, 255, 255, 0.18);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.68);
   font-size: 14px;
   text-align: center;
 }
@@ -360,20 +279,16 @@
   display: none !important;
 }
 
+/* 标题是辅助信息，直接排在图片下方 */
 .iro-lightbox__caption {
   max-width: min(780px, 86vw);
   max-height: 18vh;
   margin: 0;
-  padding: 8px 18px;
+  padding: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   touch-action: pan-y;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.08);
-  -webkit-backdrop-filter: blur(12px) saturate(1.3);
-  backdrop-filter: blur(12px) saturate(1.3);
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(255, 255, 255, 0.66);
   font-size: 13px;
   line-height: 1.55;
   text-align: center;
@@ -392,46 +307,32 @@ html.iro-lightbox-open body {
   padding-right: var(--iro-lightbox-gutter, 0px);
 }
 
-/* 正文图片的可点击提示 */
+/* 正文图片的可点击提示；只保留功能性的光标和键盘焦点 */
 .entry-content img[data-iro-lightbox="ready"] {
   cursor: zoom-in;
 }
 
-.entry-content img[data-iro-lightbox="ready"]:hover {
-  filter: brightness(1.04) saturate(1.02);
+.entry-content img[data-iro-lightbox="ready"]:focus-visible {
+  outline: 2px solid rgba(80, 80, 80, 0.7);
+  outline-offset: 4px;
 }
 
-.entry-content img[data-iro-lightbox="ready"]:focus-visible {
-  border-radius: 6px;
-  outline: 2px solid var(--article-theme-highlight, var(--theme-skin-matching, #a4cdf6));
-  outline-offset: 4px;
+body.dark .entry-content img[data-iro-lightbox="ready"]:focus-visible {
+  outline-color: rgba(255, 255, 255, 0.72);
 }
 
 @media (max-width: 720px) {
   .iro-lightbox__stage {
-    padding: 62px 12px 20px;
-  }
-
-  .iro-lightbox__backdrop {
-    -webkit-backdrop-filter: blur(10px) saturate(1.15);
-    backdrop-filter: blur(10px) saturate(1.15);
-  }
-
-  .iro-lightbox__backdrop::before,
-  .iro-lightbox__backdrop::after {
-    filter: blur(64px);
-    opacity: 0.14;
+    padding: 54px 8px 16px;
   }
 
   .iro-lightbox__topbar {
-    top: 10px;
-    right: 12px;
-    left: 12px;
+    top: 8px;
+    right: 10px;
+    left: 10px;
   }
 
   .iro-lightbox__counter {
-    min-height: 34px;
-    padding: 0 12px;
     font-size: 11px;
   }
 
@@ -443,7 +344,11 @@ html.iro-lightbox-open body {
   .iro-lightbox__nav {
     width: 42px;
     height: 42px;
-    background: rgba(12, 15, 24, 0.44);
+    background: rgba(0, 0, 0, 0.36);
+  }
+
+  .iro-lightbox__nav:hover {
+    background: rgba(0, 0, 0, 0.52);
   }
 
   .iro-lightbox__nav--prev {
@@ -455,41 +360,25 @@ html.iro-lightbox-open body {
   }
 
   .iro-lightbox__image {
-    max-width: calc(100vw - 24px);
-    max-height: calc(100vh - 170px);
-    max-height: calc(100dvh - 170px);
-    border-radius: 16px;
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 150px);
+    max-height: calc(100dvh - 150px);
   }
 
   .iro-lightbox__caption {
-    max-width: calc(100vw - 32px);
-    padding: 7px 14px;
+    max-width: calc(100vw - 24px);
     font-size: 12.5px;
   }
 }
 
 @media (max-height: 520px) {
   .iro-lightbox__stage {
-    padding-top: 58px;
-    padding-bottom: 12px;
+    padding-top: 52px;
+    padding-bottom: 10px;
   }
 
   .iro-lightbox__caption {
-    max-height: 18vh;
-    overflow: auto;
-  }
-}
-
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .iro-lightbox__backdrop {
-    background: rgba(8, 10, 18, 0.94);
-  }
-
-  .iro-lightbox__close,
-  .iro-lightbox__nav,
-  .iro-lightbox__counter,
-  .iro-lightbox__caption {
-    background: rgba(18, 22, 34, 0.9);
+    max-height: 16vh;
   }
 }
 
@@ -498,11 +387,11 @@ html.iro-lightbox-open body {
   .iro-lightbox__stage,
   .iro-lightbox__image,
   .iro-lightbox__close,
-  .iro-lightbox__nav,
-  .iro-lightbox__spinner,
-  .iro-lightbox__backdrop::before,
-  .iro-lightbox__backdrop::after {
-    animation: none !important;
+  .iro-lightbox__nav {
     transition: none !important;
+  }
+
+  .iro-lightbox__spinner {
+    animation-duration: 1.6s;
   }
 }
