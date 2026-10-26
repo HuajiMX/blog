@@ -652,11 +652,16 @@ function sakura_scripts()
         // 新页面 footer 的脚本，因此把自注入逻辑放进每次导航都会重新执行的
         // #app-js-before 内联脚本：到达带 .entry-content 的页面时按需补载。
         // 灯箱脚本基于事件委托且监听 pjax:complete，加载一次即持续可用。
+        // ver 与 enqueue 版本规则一致（filemtime），避免被 nginx 一年强缓存住旧版。
+        $lb_js_ver = @filemtime(get_template_directory() . '/js/iro-lightbox.js') ?: IRO_VERSION;
+        $lb_css_ver = @filemtime(get_template_directory() . '/css/iro-lightbox.css') ?: IRO_VERSION;
+        $lb_js_url = get_template_directory_uri() . '/js/iro-lightbox.js?ver=' . $lb_js_ver;
+        $lb_css_url = get_template_directory_uri() . '/css/iro-lightbox.css?ver=' . $lb_css_ver;
         wp_add_inline_script(
             'app',
             "window.__iroLbLoader||(window.__iroLbLoader=1,function(){"
-            . "var js=" . wp_json_encode(get_template_directory_uri() . '/js/iro-lightbox.js') . ","
-            . "css=" . wp_json_encode(get_template_directory_uri() . '/css/iro-lightbox.css') . ";"
+            . "var js=" . wp_json_encode($lb_js_url) . ","
+            . "css=" . wp_json_encode($lb_css_url) . ";"
             . "document.addEventListener('pjax:complete',function(){"
             . "if(!document.querySelector('.entry-content')||document.getElementById('iro-lightbox-js'))return;"
             . "var s=document.createElement('script');s.id='iro-lightbox-js';s.src=js;document.body.appendChild(s);"
