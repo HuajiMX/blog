@@ -569,7 +569,11 @@ function sakura_scripts()
         if (!is_home()) {
             //非主页的资源
             wp_enqueue_script('app-page', $core_lib_basepath . '/js/page.js', array('app', 'polyfills'), IRO_VERSION, true);
-            wp_enqueue_script('toc-active-scroll', get_template_directory_uri() . '/js/toc-active-scroll.js', array('app-page'), @filemtime(get_template_directory() . '/js/toc-active-scroll.js') ?: IRO_VERSION, true);
+        }
+        // 目录增强脚本：PJAX 下从首页也可能切到文章页，需提前就位（依赖 app 即可，
+        // 它只在 #main-container .toc 出现时工作，其余页面整体空转）。
+        if (!is_home() || iro_opt('poi_pjax')) {
+            wp_enqueue_script('toc-active-scroll', get_template_directory_uri() . '/js/toc-active-scroll.js', array('app'), @filemtime(get_template_directory() . '/js/toc-active-scroll.js') ?: IRO_VERSION, true);
         }
     }
     wp_enqueue_script('polyfills', $core_lib_basepath . '/js/polyfill.js', array(), IRO_VERSION, true);
