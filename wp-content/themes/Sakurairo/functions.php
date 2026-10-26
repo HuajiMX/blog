@@ -627,7 +627,8 @@ function sakura_scripts()
 
     // 文章图片灯箱；主题内置 lightbox 开启时交给内置方案，避免重复绑定
     $iro_builtin_lightbox = iro_opt('lightbox');
-    if (is_singular() && (!$iro_builtin_lightbox || $iro_builtin_lightbox === 'off')) {
+    $iro_lightbox_off = !$iro_builtin_lightbox || $iro_builtin_lightbox === 'off';
+    if ($iro_lightbox_off && is_singular()) {
         $iro_lightbox_css = '/css/iro-lightbox.css';
         $iro_lightbox_js = '/js/iro-lightbox.js';
 
@@ -643,6 +644,25 @@ function sakura_scripts()
             array(),
             @filemtime(get_template_directory() . $iro_lightbox_js) ?: IRO_VERSION,
             true
+        );
+    }
+    if ($iro_lightbox_off && iro_opt('poi_pjax') && !is_singular()) {
+        // PJAX 下灯箱脚本只在文章页输出，从首页/归档页导航过来时不会加载。
+        // 主题 PJAX 只替换 #page / .footer-content / #app-js-before，不会执行
+        // 新页面 footer 的脚本，因此把自注入逻辑放进每次导航都会重新执行的
+        // #app-js-before 内联脚本：到达带 .entry-content 的页面时按需补载。
+        // 灯箱脚本基于事件委托且监听 pjax:complete，加载一次即持续可用。
+        wp_add_inline_script(
+            'app',
+            "window.__iroLbLoader||(window.__iroLbLoader=1,function(){"
+            . "var js=" . wp_json_encode(get_template_directory_uri() . '/js/iro-lightbox.js') . ","
+            . "css=" . wp_json_encode(get_template_directory_uri() . '/css/iro-lightbox.css') . ";"
+            . "document.addEventListener('pjax:complete',function(){"
+            . "if(!document.querySelector('.entry-content')||document.getElementById('iro-lightbox-js'))return;"
+            . "var s=document.createElement('script');s.id='iro-lightbox-js';s.src=js;document.body.appendChild(s);"
+            . "var c=document.createElement('link');c.rel='stylesheet';c.href=css;document.head.appendChild(c);"
+            . "});}());",
+            'before'
         );
     }
 }
