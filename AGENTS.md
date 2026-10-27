@@ -6,16 +6,24 @@
 
 ## 测试与验证
 
-- 本机 WSL 中部署了博客的本地 Web 服务，在 WSL 中使用 `systemctl start nginx` 启动 Nginx，访问 [本地链接](http://localhost/) 即可
+- 本机 WSL 中部署了博客的本地 Web 服务，在 WSL 中使用 `systemctl start nginx` 启动 Nginx，访问 <http://localhost/> 即可
 - 可以按需使用 `chrome-headless-shell` 截图或者使用 `browser-skill` 操作真实浏览器
-- 远程网站部署在 [远程网站](https://blog.huajimc.cn)
+- 远程网站部署在 <https://blog.huajimc.cn>
 
 ## 注意事项
 
-- 我们不会主动更新 Sakurairo 主题与第三方插件，因此开发中若设计主题或插件，不需要顾及以后可能的更新导致的代码覆盖，按最简洁、最匹配、最可维护的方法开发即可
+- 我们不会主动更新 Sakurairo 主题与第三方插件，因此开发中若设计主题或插件，不需要顾及以后可能的更新导致的代码覆盖，按最简洁、最匹配、最可维护、开销最小的方法开发即可
 - UI 开发需要与整站的风格匹配：二次元个人博客风、Glassmorphism、Card-based UI、ACG (Anime, Comic, Games) Aesthetic、Soft & Rounded；但“匹配”不等于堆叠主题色和装饰，具体按下方「UI 设计判断」区分组件类型
-- 博客文章基本上都使用 Markdown 编写，wp-githuber-md 插件提供文章撰写的 MD 编辑器，katex 插件提供数学公式渲染
-- 当你发现本文档中的约定有变更、不足、过时或需要纠正时，在任务完成后主动将修正建议提请我审阅
+- 博客文章基本上都使用 Markdown 编写，wp-githuber-md 插件提供文章撰写的 MD 编辑器，katex 插件提供数学公式渲染（数学公式架构见下方「数学公式渲染约定」）
+- 当你发现本文档中的约定有变更、不足、过时或需要纠正时，在任务完成后主动将 `AGENTS.md` 修正建议提请我审阅
+
+## 数学公式渲染约定
+
+- 语法规则表只有一份：`wp-content/plugins/katex/scripts/grammar.php` 的 `katex_math_rules()`。新增数学定界符（如 `\(x\)` / `\[x\]`）只需往该表加一条规则（PHP 与 JS 通用的正则子集），保存、前台、编辑器预览三处即同时生效，无需改其他文件
+- 数据契约：文章正文（`post_content`）以 HTML 存储，公式是 `<span|div class="katex-eq" data-katex-display="true|false" data-katex-tex="TeX源码">` 元素；独占段落的展示公式用 `<div>`，行内及句中公式用 `<span>`。TeX 源码同时放属性与文本（换行写成 `&#10;`），保证 RSS/摘要/无 JS 时可读
+- `wp-githuber-md` 不再自带 KaTeX（原 `Modules/KaTeX.php` 已停用），保存时经 katex 插件的 `katex_markdown_protect()` 保护公式不受 Parsedown 破坏；前台由 katex 插件 `the_content` 优先级 9 的过滤器和 `assets/render.js` 渲染，全站统一 KaTeX 0.16.22
+- Sakurairo 主题的 MathJax 已固定关闭（`inc/swicher.php` 中 `theme_mathjax => false`），避免与 KaTeX 双重渲染；PJAX 场景由 katex 插件的 `__iroKatexLoader` 桥按需补载资源
+- 共享测试用例：`tests/math-cases.json`，用 `php tests/run-php.php` 与 `node tests/run-js.js` 双端运行，改动语法规则后必须两边全绿
 
 ## UI 设计判断
 
