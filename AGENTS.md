@@ -6,9 +6,28 @@
 
 ## 测试与验证
 
-- 本机 WSL 中部署了博客的本地 Web 服务，在 WSL 中使用 `systemctl start nginx` 启动 Nginx，访问 <http://localhost/> 即可
+- 本机 WSL 中部署了博客的本地 Web 服务，在 WSL 中使用 `systemctl start nginx` 启动 Nginx，访问 <http://localhost/> 即可（站点根目录和 MySQL 均在本机，`php8.4-fpm` + `mysql` 需处于运行状态）
 - 可以按需使用 `chrome-headless-shell` 截图或者使用 `browser-skill` 操作真实浏览器
-- 远程网站部署在 <https://blog.huajimc.cn>
+- 远程网站部署在 <https://blog.huajimc.cn>，**经 DNS 解析到 Clash fake-ip（198.18.0.x），直连必然 SSL 超时**；命令行访问需走 `http_proxy=http://127.0.0.1:7897`，浏览器/截图工具需允许系统代理
+
+### 本地环境的三处特有配置
+
+这三项都是本地测试环境与线上部署的差异，改动代码前先确认，否则会误判为代码 bug：
+
+- **`css/theme.css` 重写**：主题样式地址是 `/wp-content/themes/Sakurairo/css/theme.css`，由 `css/index.php` 动态生成。线上由又拍云/CDN 侧做了重写，本地必须在 `/etc/nginx/sites-available/default` 中保留等价规则，否则整站无 CSS：
+  ```nginx
+  location = /wp-content/themes/Sakurairo/css/theme.css {
+      rewrite ^ /wp-content/themes/Sakurairo/css/index.php last;
+  }
+  ```
+- **opcache 关闭时间戳校验**：项目位于 `/mnt/e`（9p 挂载），每次 stat 约 1ms，而单次请求要 include 1100+ 个 PHP 文件。已在 `/etc/php/8.4/fpm/conf.d/99-local-dev.ini` 中设置 `opcache.validate_timestamps=0`、`opcache.revalidate_freq=0`、`opcache.enable_file_override=1`，把首页 TTFB 从 5–14s 降到约 0.5s。**代价是改了 PHP 源码后 opcache 不会自动失效，改完必须 `systemctl restart php8.4-fpm`。**
+- **本地已停用 `wpforms-lite`**：该插件零表单、零短代码引用，但前台引导会额外加载 409 个文件，是本地延迟的主要来源。`active_plugins` 中已移除；如需在本地测试表单请自行启用。同时 `wp-paragraph-comments` 的目录名已更正为 `wp-paragraph-comments-main`。
+
+### 本地已知的非故障现象
+
+- **首页背景图不显示**：`iro_options` 使用外部随机图 API（`api.fuukei.org` → `imgres.foxwaf.com`），该图床当前返回 404；本地 `wp-content/uploads/iro-image-pool/` 各分类的 `index.json` 里 `items` 为空，只会回退到这个外部接口。这是第三方图源问题，不影响本地 UI 验证。
+- **页面中文乱码**：本地库数据本身是以错误编码导入的（`wp_options.blogname`、`wp_posts.post_title` 中存储的字节即为坏值），与渲染无关，本地测试不修。
+- **首次请求慢**：FPM 重启后的第一个请求需要重新编译并填充 opcache，约 5s，之后稳定在 0.5s。自动化脚本的超时要按首请求留足余量。
 
 ## 注意事项
 
@@ -29,9 +48,10 @@
 
 - 可变的前端资源（`katex-core.js`、`render.js` 等会被重构的文件）在输出 URL 时必须带上按文件修改时间生成的版本参数（`filemtime`），而不是固定的插件版本号常量。磁盘文件更新后若 `?ver` 不变，nginx/边缘缓存会对同一 URL 持续返回旧字节，导致线上加载到旧脚本；主题 `sakura_scripts` 的灯箱桥与 katex 插件的 `katex_asset_version()`（`scripts/resource.php`）均已按此处理，新增类似资源沿用同一做法。
 - 不可变的 vendor 文件（`katex.min.js/css`）可继续用固定静态版本，无需 filemtime。
+- 主题整站样式 `css/theme.css` 由 `css/index.php` 动态拼接，本身不能带 `filemtime`，改由 `functions.php` 的 `sakura_scripts` 把拼接源文件（含 `css/content-style/*.css`）的**最大** `filemtime` 作为 `cb=` 参数加入 URL，且该 URL 带 `Cache-Control: max-age=86400`。因此改完主题 CSS 无需手动清缓存或等过期，`cb` 会自动变化。**注意仅在 `dev_mode` 关闭时走这条路径**；开启后改走逐文件 `wp_enqueue_style`，其中只有 `style.css` 与 `css/content-style/*.css` 用 `filemtime`，其余（`shortcodes`/`dark`/`responsive`/`animation`/`templates`）仍是固定 `IRO_VERSION`，改这些文件在 `dev_mode` 下不会换 URL，需自行加 `?ver` 或临时关闭 `dev_mode`。
 - 改完 `render.js` / `katex-core.js` 后需在线上验证「从首页经 PJAX 进入文章页」场景能正常渲染公式，而不只是整页刷新：
 
-  - Sakurairo 的 PJAX（`9308.js`）只替换 `#page` / `title` / `.footer-content` / `#app-js-before`，并把这些容器里的内联脚本重新执行；**新页面 footer 的脚本不会执行**。因此依赖 `DOMContentLoaded` 单次渲染的脚本在 PJAX 导航后不会重跑（该事件在首页就早已触发）。
+  - Sakurairo 的 PJAX（`9308.js`）只替换 `#page` / `title` / `.footer-content` / `#app-js-before`，并把这些容器里的内联脚本重新执行；**新页面 footer 的脚本不会执行**。因此依赖 `DOMContentLoaded` 单次渲染的脚本在 PJAX 导航后不会重跑（该事件在首页就早已触发）。调试时若开启 `dev_mode`，选择器列表还会追加 `#entry-content-css`（源码中为 `1==_iro.dev_mode&&selectors.push("#entry-content-css")`），排查时不要把它当成常规容器。
   - 需要跨 PJAX 生效的逻辑要放进每次导航都会重新执行的 `#app-js-before` 内联脚本（如 `__iroKatexLoader`、主题的 `__iroLbLoader`），或监听主题派发的 `pjax:complete`（CustomEvent `pjax:send`/`pjax:complete`，首页与文章页都会触发）。
   - 判断补载是否完成以「真正能触发渲染」为信号（如 render.js 暴露的 `iroKatexRender`），不能只看 `katex` 全局是否存在——半加载状态下 `katex` 可能已定义而核心/渲染脚本缺失，会导致 PJAX 下公式停留在原始 TeX。
   - 本地站几乎只有纯文本文章，无法复现含公式文章的真实 PJAX；需用 `chrome-headless-shell` 对线上含公式文章做真实点击导航来验证。
