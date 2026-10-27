@@ -25,6 +25,17 @@
 - Sakurairo 主题的 MathJax 已固定关闭（`inc/swicher.php` 中 `theme_mathjax => false`），避免与 KaTeX 双重渲染；PJAX 场景由 katex 插件的 `__iroKatexLoader` 桥按需补载资源
 - 共享测试用例：`tests/math-cases.json`，用 `php tests/run-php.php` 与 `node tests/run-js.js` 双端运行，改动语法规则后必须两边全绿
 
+## 资源缓存失效与 PJAX 注意
+
+- 可变的前端资源（`katex-core.js`、`render.js` 等会被重构的文件）在输出 URL 时必须带上按文件修改时间生成的版本参数（`filemtime`），而不是固定的插件版本号常量。磁盘文件更新后若 `?ver` 不变，nginx/边缘缓存会对同一 URL 持续返回旧字节，导致线上加载到旧脚本；主题 `sakura_scripts` 的灯箱桥与 katex 插件的 `katex_asset_version()`（`scripts/resource.php`）均已按此处理，新增类似资源沿用同一做法。
+- 不可变的 vendor 文件（`katex.min.js/css`）可继续用固定静态版本，无需 filemtime。
+- 改完 `render.js` / `katex-core.js` 后需在线上验证「从首页经 PJAX 进入文章页」场景能正常渲染公式，而不只是整页刷新：
+
+  - Sakurairo 的 PJAX（`9308.js`）只替换 `#page` / `title` / `.footer-content` / `#app-js-before`，并把这些容器里的内联脚本重新执行；**新页面 footer 的脚本不会执行**。因此依赖 `DOMContentLoaded` 单次渲染的脚本在 PJAX 导航后不会重跑（该事件在首页就早已触发）。
+  - 需要跨 PJAX 生效的逻辑要放进每次导航都会重新执行的 `#app-js-before` 内联脚本（如 `__iroKatexLoader`、主题的 `__iroLbLoader`），或监听主题派发的 `pjax:complete`（CustomEvent `pjax:send`/`pjax:complete`，首页与文章页都会触发）。
+  - 判断补载是否完成以「真正能触发渲染」为信号（如 render.js 暴露的 `iroKatexRender`），不能只看 `katex` 全局是否存在——半加载状态下 `katex` 可能已定义而核心/渲染脚本缺失，会导致 PJAX 下公式停留在原始 TeX。
+  - 本地站几乎只有纯文本文章，无法复现含公式文章的真实 PJAX；需用 `chrome-headless-shell` 对线上含公式文章做真实点击导航来验证。
+
 ## UI 设计判断
 
 ### 组件类型
