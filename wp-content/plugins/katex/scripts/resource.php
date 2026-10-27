@@ -194,14 +194,20 @@ function katex_pjax_bridge() {
         . 'if(next){s.onload=next;}document.body.appendChild(s);}'
         . 'function boot(){'
         . 'if(!document.querySelector(".katex-eq")){return;}'
-        . 'if(window.iroKatexRender){window.iroKatexRender();}'
-        . 'if(typeof katex!=="undefined"||window.__iroKatexLoading){return;}'
+        // The pipeline is complete only once render.js has run and defined
+        // iroKatexRender. katex.min.js being present alone is NOT enough: a
+        // stale/partial load can leave `katex` defined while katex-core and
+        // render.js are missing, which made Pjax show raw TeX until reload.
+        . 'if(window.iroKatexRender){window.iroKatexRender();return;}'
+        . 'if(window.__iroKatexLoading){return;}'
         . 'window.__iroKatexLoading=1;'
         . 'if(!document.getElementById("iro-katex-css")){'
         . 'var c=document.createElement("link");c.id="iro-katex-css";c.rel="stylesheet";'
         . 'c.href=a.css;document.head.appendChild(c);}'
         . 'window.katexMathConfig=a.config;'
-        . 'load(a.js,function(){load(a.core,function(){load(a.main);});});}'
+        . 'function afterCore(){load(a.main);}'
+        . 'if(typeof katex!=="undefined"){load(a.core,afterCore);}'
+        . 'else{load(a.js,function(){load(a.core,afterCore);});}}'
         . 'document.addEventListener("pjax:complete",boot);'
         . '}());',
         'before'
