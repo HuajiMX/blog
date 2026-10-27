@@ -21,6 +21,25 @@ if ( ! defined( 'ABSPATH' ) ) exit; // Exit if accessed directly
 define('KATEX_JS_VERSION', '0.16.22');
 
 
+/**
+ * Cache-busting version for a plugin asset URL.
+ *
+ * `KATEX__PLUGIN_VERSION` alone is not enough: when a mutable file changes we
+ * must give it a new query string, otherwise nginx/edge caches keep serving the
+ * stale bytes for `?ver=<old version>` (cf. theme `sakura_scripts`, which uses
+ * filemtime for the same reason). Vendor files (katex.min.js/css) are immutable
+ * per KATEX_JS_VERSION, so they keep the static plugin version.
+ *
+ * @param string $relative_path Path under the plugin dir, e.g. 'assets/render.js'.
+ * @return int|string filemtime when the file exists, else KATEX__PLUGIN_VERSION.
+ */
+function katex_asset_version( $relative_path ) {
+    $file = KATEX__PLUGIN_DIR . ltrim( $relative_path, '/' );
+    $mtime = is_readable( $file ) ? @filemtime( $file ) : false;
+    return $mtime ? $mtime : KATEX__PLUGIN_VERSION;
+}
+
+
 add_action('init', 'katex_resources_init');
 // wp_enqueue_scripts runs before wp_head, so the stylesheet still lands in
 // <head>; 20 leaves room for the theme to register `app` first.
@@ -47,7 +66,7 @@ function katex_resources_init() {
         'katex-core',
         KATEX__PLUGIN_URL . 'assets/katex-core.js',
         array('katex'),
-        KATEX__PLUGIN_VERSION,
+        katex_asset_version( 'assets/katex-core.js' ),
         true, // In footer.
     );
 
@@ -57,7 +76,7 @@ function katex_resources_init() {
         'katex-render',
         KATEX__PLUGIN_URL . 'assets/render.js',
         array('katex', 'katex-core'),
-        KATEX__PLUGIN_VERSION,
+        katex_asset_version( 'assets/render.js' ),
         true, // In footer.
     );
 }
@@ -179,8 +198,8 @@ function katex_pjax_bridge() {
     $assets = array(
         'css'    => add_query_arg('ver', KATEX__PLUGIN_VERSION, KATEX__PLUGIN_URL . 'assets/katex-' . KATEX_JS_VERSION . '/katex.min.css'),
         'js'     => add_query_arg('ver', KATEX__PLUGIN_VERSION, KATEX__PLUGIN_URL . 'assets/katex-' . KATEX_JS_VERSION . '/katex.min.js'),
-        'core'   => add_query_arg('ver', KATEX__PLUGIN_VERSION, KATEX__PLUGIN_URL . 'assets/katex-core.js'),
-        'main'   => add_query_arg('ver', KATEX__PLUGIN_VERSION, KATEX__PLUGIN_URL . 'assets/render.js'),
+        'core'   => add_query_arg('ver', katex_asset_version( 'assets/katex-core.js' ), KATEX__PLUGIN_URL . 'assets/katex-core.js'),
+        'main'   => add_query_arg('ver', katex_asset_version( 'assets/render.js' ), KATEX__PLUGIN_URL . 'assets/render.js'),
         // katex-core.js reads this global; on a normal request wp_localize_script
         // provides it, but a Pjax navigation never prints it.
         'config' => katex_math_runtime_config(),
