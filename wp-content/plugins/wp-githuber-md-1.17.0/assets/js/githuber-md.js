@@ -92,8 +92,10 @@ var spellcheck_lang = 'en_US';
                 }
             },
             onchange: function () {
-                if (editormd.$katex || (typeof katex !== 'undefined')) {
-                    this.katexRender();
+                // Math preview is owned by the KaTeX plugin (assets/preview.js):
+                // it uses the same syntax table and KaTeX build as the front end.
+                if (window.iroKatexPreview) {
+                    window.iroKatexPreview.render(this);
                 }
             },
         };
@@ -101,7 +103,9 @@ var spellcheck_lang = 'en_US';
 
         if ($(wp_editor_container).length === 1) {
             githuber_md_editor = editormd(wp_editor, global_editormd_config);
-            githuberSetupKatexPreview();
+            if (window.iroKatexPreview) {
+                window.iroKatexPreview.setup(githuber_md_editor);
+            }
         }
 
         function reload_githuber_md() {
@@ -177,153 +181,3 @@ var spellcheck_lang = 'en_US';
         }
     });
 })(jQuery);
-
-/* -------------------------------------------------------------------------
- * KaTeX live-preview integration.
- *
- * Renders $...$ (inline) and $$...$$ (display) math inside the Editor.md
- * preview. The math content is protected from the Markdown parser before
- * rendering, then handed to KaTeX as .editormd-tex elements.
- * ---------------------------------------------------------------------- */
-function githuberSetupKatexPreview() {
-    if (typeof editormd === 'undefined' || !editormd.$marked) {
-        setTimeout(githuberSetupKatexPreview, 100);
-        return;
-    }
-
-    if (window.__githuberKatexSetupDone) {
-        return;
-    }
-    window.__githuberKatexSetupDone = true;
-
-    console.log('[Githuber MD] KaTeX preview: marked wrapped');
-
-    var originalMarked = editormd.$marked;
-
-    // Hide $ inside code spans / fences / HTML code blocks so the math
-    // patterns below never touch code content.
-    function protectKatexMath(md, tokens) {
-        md = md.replace(
-            /(```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]+`|<pre\b[^>]*>[\s\S]*?<\/pre>|<code\b[^>]*>[\s\S]*?<\/code>)/g,
-            function (m) {
-                return m.replace(/\$/g, 'GMDKATEXDOLLAR');
-            }
-        );
-
-        // Display math: $$...$$ (may span multiple lines).
-        md = md.replace(/\$\$([\s\S]+?)\$\$/g, function (m, g1) {
-            var key = 'GMDKATEX{' + tokens.length + '}';
-            tokens.push({ key: key, math: g1, display: true });
-            return key;
-        });
-
-        // Inline math: $...$ (single line, unescaped delimiters).
-        md = md.replace(
-            /(?<![\\$])\$(?!\$)([^\$\n]+?)(?<!\\)\$(?!\$)/g,
-            function (m, g1) {
-                var key = 'GMDKATEX{' + tokens.length + '}';
-                tokens.push({ key: key, math: g1, display: false });
-                return key;
-            }
-        );
-
-        return md;
-    }
-
-    function restoreKatexMath(html, tokens) {
-        // Bring back $ inside code.
-        html = html.split('GMDKATEXDOLLAR').join('$');
-
-        // Strip math placeholders from HTML attribute values (e.g. the
-        // heading renderer puts the raw text into `name="..."`), so they
-        // never leak HTML into attributes.
-        html = html.replace(/([a-zA-Z][a-zA-Z0-9_-]*="[^"]*")/g, function (attr) {
-            return attr.replace(/GMDKATEX\{\d+\}/g, '');
-        });
-
-        for (var i = 0; i < tokens.length; i++) {
-            var t = tokens[i];
-            var attr = t.display ? ' data-katex-display="true"' : '';
-            var escaped = $('<span/>').text(t.math).html();
-            html = html.split(t.key).join(
-                '<span class="' + editormd.classNames.tex + '"' + attr + '>' + escaped + '</span>'
-            );
-        }
-
-        return html;
-    }
-
-    // Wrap the markdown -> html step so math is never parsed by markdown.
-    // Keep marked's static members (Renderer, Parser, options, ...) on the
-    // wrapper, because Editor.md builds its renderer via editormd.$marked.Renderer.
-    var wrappedMarked = function (md, renderer, options) {
-        var tokens = [];
-        var protectedMd = protectKatexMath(md, tokens);
-        var html = originalMarked.call(this, protectedMd, renderer, options);
-        return restoreKatexMath(html, tokens);
-    };
-    for (var k in originalMarked) {
-        if (Object.prototype.hasOwnProperty.call(originalMarked, k)) {
-            wrappedMarked[k] = originalMarked[k];
-        }
-    }
-    editormd.$marked = wrappedMarked;
-
-    // Render .editormd-tex nodes with KaTeX, honouring display mode.
-    if (editormd.prototype) {
-        editormd.prototype.katexRender = function () {
-            var katexObj = editormd.$katex || (typeof katex !== 'undefined' ? katex : null);
-            if (!katexObj) {
-                return this;
-            }
-            var nodes = this.previewContainer.find('.' + editormd.classNames.tex);
-            if (nodes.length > 0) {
-                console.log('[Githuber MD] KaTeX render:', nodes.length, 'node(s)');
-            }
-            nodes.each(function () {
-                var el = $(this);
-                if (el.find('.katex').length > 0) {
-                    return; // Already rendered.
-                }
-                var display = el.attr('data-katex-display') === 'true';
-                try {
-                    katexObj.render(el.text(), el[0], {
-                        displayMode: display,
-                        throwOnError: false
-                    });
-                } catch (e) {
-                    el.text(e.message);
-                }
-            });
-            return this;
-        };
-    }
-
-    // Make sure KaTeX is available, then re-render the current preview so
-    // already-open posts also get their math rendered.
-    var rerenderKatexPreview = function () {
-        if (typeof githuber_md_editor !== 'undefined' && githuber_md_editor) {
-            githuber_md_editor.save();
-        }
-    };
-
-    var ensureKatex = function () {
-        if (editormd.$katex || (typeof katex !== 'undefined')) {
-            rerenderKatexPreview();
-            return;
-        }
-        if (window.__githuberKatexLoading) {
-            return;
-        }
-        window.__githuberKatexLoading = true;
-        editormd.loadKaTeX(function () {
-            editormd.$katex = katex;
-            console.log('[Githuber MD] KaTeX loaded for preview');
-            rerenderKatexPreview();
-        });
-    };
-
-    ensureKatex();
-}
-
-

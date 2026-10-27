@@ -15,6 +15,17 @@
     });
   }
 
+  /*
+   * A heading can contain a formula. tocbot copies the heading's text into the
+   * link, and KaTeX's markup carries both the visible HTML and a hidden
+   * MathML/prose copy, so the link would read the formula twice (or, with
+   * `output: html` on the plugin side, still contain stale markup from an
+   * older render).
+   *
+   * The TOC must show what the heading shows, so copy the heading, drop the
+   * non-visible parts and keep the rendered formula in place instead of
+   * flattening it to plain text.
+   */
   function fixMathLabels() {
     if (!toc) return;
     var links = toc.querySelectorAll('a.toc-link[href^="#"]');
@@ -31,16 +42,21 @@
       }
 
       var heading = document.getElementById(id);
-      if (!heading || !heading.querySelector('.katex')) continue;
+      if (!heading || !heading.querySelector('.katex, .katex-eq')) continue;
 
       var clone = heading.cloneNode(true);
       clone.removeAttribute('id');
       clone.querySelectorAll('[id]').forEach(function (node) {
         node.removeAttribute('id');
       });
+      // Hidden MathML twin and the raw TeX annotation duplicate the formula.
       clone.querySelectorAll('.katex-mathml').forEach(function (node) {
         node.remove();
       });
+      clone.querySelectorAll('annotation').forEach(function (node) {
+        node.remove();
+      });
+      // Anchor wrappers inside a link would nest links.
       clone.querySelectorAll('a').forEach(function (node) {
         while (node.firstChild) {
           node.parentNode.insertBefore(node.firstChild, node);

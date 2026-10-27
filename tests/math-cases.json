@@ -1,0 +1,199 @@
+{
+  "_comment": "Shared math pipeline cases. Run by tests/run-php.php (server side) and tests/run-js.js (browser side) so the two implementations cannot drift.",
+  "cases": [
+    {
+      "name": "inline basic",
+      "markdown": "行内 $a+b$ 与 $c$。",
+      "expect": {
+        "elements": 2,
+        "display": [false, false],
+        "tex": ["a+b", "c"]
+      }
+    },
+    {
+      "name": "inline adjacent to CJK punctuation",
+      "markdown": "公式 $x^2$。以及 $y$ 和 (z $w$)",
+      "expect": {
+        "elements": 3,
+        "display": [false, false, false],
+        "tex": ["x^2", "y", "w"]
+      }
+    },
+    {
+      "name": "display owns its paragraph",
+      "markdown": "前文\n\n$$\n\\lim_{n \\to \\infty} \\sum_{k=1}^{n} \\frac{k^n}{n^n}\n$$\n\n后文",
+      "expect": {
+        "elements": 1,
+        "display": [true],
+        "tags": ["div"],
+        "textContains": ["<p>前文</p>", "<p>后文</p>"]
+      }
+    },
+    {
+      "name": "display with a blank line inside",
+      "markdown": "$$\na = b\n\nc = d\n$$",
+      "expect": {
+        "elements": 1,
+        "display": [true],
+        "tags": ["div"],
+        "absent": ["</p>\n<p>c = d", "<br"]
+      }
+    },
+    {
+      "name": "display keeps its row separator",
+      "markdown": "$$\n\\begin{aligned}\na &= b \\\\\nc &= d\n\\end{aligned}\n$$",
+      "expect": {
+        "elements": 1,
+        "display": [true],
+        "tex": ["\n\\begin{aligned}\na &= b \\\\\nc &= d\n\\end{aligned}\n"]
+      }
+    },
+    {
+      "name": "currency is not math",
+      "markdown": "价格是 $5 到 $10 之间，另一个 $ 符号。",
+      "expect": {
+        "elements": 0
+      }
+    },
+    {
+      "name": "escaped dollar is not math",
+      "markdown": "转义 \\$5 与公式 $x$。",
+      "expect": {
+        "elements": 1,
+        "tex": ["x"]
+      }
+    },
+    {
+      "name": "spaces inside delimiters are not math",
+      "markdown": "空格的 $ x $ 不算公式",
+      "expect": {
+        "elements": 0
+      }
+    },
+    {
+      "name": "fence keeps a lone $$ and the rest of the post survives",
+      "markdown": "示例：\n\n```c\nprintf(\"$$ %d\", x);\n```\n\n后面还有正文，以及公式 $$y=2$$。",
+      "expect": {
+        "elements": 1,
+        "textContains": ["$$ %d", "后面还有正文"],
+        "absent": ["x);\n```"]
+      }
+    },
+    {
+      "name": "inline code keeps dollar",
+      "markdown": "代码 `echo $x$` 与公式 $y$。",
+      "expect": {
+        "elements": 1,
+        "tex": ["y"],
+        "textContains": ["<code>echo $x$</code>"]
+      }
+    },
+    {
+      "name": "link destination keeps dollar",
+      "markdown": "参见 [链接](https://example.com/?a=1&b=$v$)。",
+      "expect": {
+        "elements": 0,
+        "textContains": ["href=\"https://example.com/?a=1&amp;b=$v$\""]
+      }
+    },
+    {
+      "name": "entity-heavy inline math",
+      "markdown": "$a < b & c > d$",
+      "expect": {
+        "elements": 1,
+        "tex": ["a < b & c > d"]
+      }
+    },
+    {
+      "name": "emphasis markers inside math stay literal",
+      "markdown": "$a*b*c$ 和 *强调*",
+      "expect": {
+        "elements": 1,
+        "tex": ["a*b*c"],
+        "textContains": ["<em>强调</em>"]
+      }
+    },
+    {
+      "name": "backslash escapes survive markdown",
+      "markdown": "$\\{x\\}$ 与 $\\alpha$",
+      "expect": {
+        "elements": 2,
+        "tex": ["\\{x\\}", "\\alpha"]
+      }
+    },
+    {
+      "name": "heading math",
+      "markdown": "## 1. $k \\ll n$\n\n正文 $x$。",
+      "expect": {
+        "elements": 2,
+        "tex": ["k \\ll n", "x"],
+        "textContains": ["<h2"],
+        "absent": ["\u0001"]
+      }
+    },
+    {
+      "name": "display inside a list item",
+      "markdown": "- 项目\n\n  $$\n  a=b\n  $$\n",
+      "expect": {
+        "elements": 1,
+        "display": [true]
+      }
+    },
+    {
+      "name": "display inside a blockquote",
+      "markdown": "> 引用\n>\n> $$\na=b\n$$",
+      "expect": {
+        "elements": 1,
+        "textContains": ["<blockquote>"]
+      }
+    },
+    {
+      "name": "two display formulas in one sentence fall back to inline spans",
+      "markdown": "$$\nx\n$$ 与 $$\ny\n$$",
+      "expect": {
+        "elements": 2,
+        "tags": ["span", "span"]
+      }
+    },
+    {
+      "name": "latex shortcode with math inside",
+      "markdown": "[latex]\\alpha+\\beta[/latex]",
+      "phpOnly": "shortcodes are expanded by do_shortcode() on the server; the editor preview keeps the literal shortcode",
+      "expect": {
+        "elements": 1,
+        "tex": ["\\alpha+\\beta"]
+      }
+    },
+    {
+      "name": "raw TeX dollar inside a latex shortcode is preserved",
+      "markdown": "[latex]$x$[/latex]",
+      "phpOnly": "shortcodes are expanded on the server only",
+      "expect": {
+        "elements": 1,
+        "tex": ["$x$"]
+      }
+    },
+    {
+      "name": "legacy display markup is upgraded to a block",
+      "html": "<p><span class=\"katex-eq\" data-katex-display=\"true\"><br />\nS_n = \\sum_{i=0}^{n-1} e^{-i}<br />\n\\tag{1}<br />\n</span></p>",
+      "phpOnly": "upgrading saved markup only happens in the content filter",
+      "expect": {
+        "elements": 1,
+        "display": [true],
+        "tags": ["div"],
+        "tex": ["S_n = \\sum_{i=0}^{n-1} e^{-i}\n\n\\tag{1}"],
+        "absent": ["<br"]
+      }
+    },
+    {
+      "name": "legacy display markup with delimiters loses them",
+      "html": "<p><span class=\"katex-eq\" data-katex-display=\"true\">$$\\lim_{n} a_n$$</span></p>",
+      "phpOnly": "upgrading saved markup only happens in the content filter",
+      "expect": {
+        "elements": 1,
+        "tags": ["div"],
+        "tex": ["\\lim_{n} a_n"]
+      }
+    }
+  ]
+}

@@ -2351,7 +2351,7 @@ function iro_get_description(){
     $description = '';
 
     if (is_singular() && !empty($post->post_content)) {
-        $description = trim(mb_strimwidth(preg_replace('/\s+/', ' ', strip_tags($post->post_content)), 0, 240, '…'));
+        $description = trim(mb_strimwidth(iro_plain_text_description($post->post_content), 0, 240, '…'));
     }
     
     if (empty($description) && is_category()) {
@@ -2371,6 +2371,26 @@ function iro_get_description(){
     }
     
     return '';
+}
+
+/**
+ * Readable plain text for meta descriptions.
+ *
+ * Math is stored as `.katex-eq` elements carrying the TeX source; strip_tags()
+ * alone would leave `$$ \lim_{n \to \infty} …` in the description. Feed math
+ * was already rendered on save, so here we only have to drop the elements and
+ * collapse the whitespace they leave behind.
+ */
+function iro_plain_text_description($content)
+{
+    // Drop math elements with their (possibly multi-line) TeX body.
+    $content = preg_replace('#<(span|div)\b[^>]*\bclass="[^"]*\bkatex-eq\b[^"]*"[^>]*>.*?</\1>#is', ' ', $content);
+    // Anything still holding a formula: leftover delimiters from older posts.
+    $content = preg_replace('/\$\$[\s\S]*?\$\$/', ' ', $content);
+    $content = strip_tags((string) $content);
+    $content = html_entity_decode($content, ENT_QUOTES, 'UTF-8');
+
+    return trim(preg_replace('/\s+/u', ' ', $content));
 }
 
 function array_html_props(array $props)

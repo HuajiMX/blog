@@ -689,3 +689,72 @@ body.dark .entry-content hr:not(.wp-block-separator) {
 .entry-content a:has(> img) {
     text-decoration: none !important;
 }
+
+/* ---------------------------------------------------------------------------
+ * KaTeX
+ *
+ * Math is content, not decoration: no theme colour, no shadow, no radius.
+ * Sizing follows the surrounding text so a formula never looks like a pasted
+ * image, and the font stack stays KaTeX's own (the theme font lacks the math
+ * glyphs).
+ * ------------------------------------------------------------------------ */
+
+.entry-content .katex {
+  font-size: 1.1em;
+  color: inherit;
+}
+
+/*
+ * Inline math keeps KaTeX's own line-breaking behaviour: letting it wrap
+ * (`white-space: normal`) breaks the vertical alignment of fractions and
+ * limits inside a sentence, which is worse than the rare over-long formula.
+ * Display math, where long formulas actually live, gets a scroll box below.
+ */
+
+/*
+ * A display formula can be wider than a phone. Keep it on one line (TeX
+ * semantics) but give it its own horizontal scroll area instead of letting it
+ * overflow the article and cause a page-wide scrollbar.
+ */
+.entry-content .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 0 6px;
+  margin: 1.1em 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.entry-content .katex-display::-webkit-scrollbar {
+  height: 6px;
+  background: transparent;
+}
+
+.entry-content .katex-display::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.35);
+  border-radius: 3px;
+}
+
+.entry-content .katex-display::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Inside the scrolling box the formula keeps its natural width. */
+.entry-content .katex-display > .katex {
+  white-space: nowrap;
+}
+
+/* Rendering failure: readable, neutral, not an alarm. */
+.entry-content .katex-eq.katex-error {
+  color: #b7453a;
+  font-family: Menlo, Consolas, monaco, monospace;
+  font-size: .92em;
+  word-break: break-word;
+}
+
+body.dark .entry-content .katex-eq.katex-error {
+  color: #ff8a7a;
+}
+
+body.dark .entry-content .katex-display::-webkit-scrollbar-thumb {
+  background: rgba(200, 200, 200, 0.28);
+}

@@ -1,42 +1,77 @@
-function _katexRender(rootElement) {
-  const eles = rootElement.querySelectorAll(".katex-eq:not(.katex-rendered)");
-  for (let idx = 0; idx < eles.length; idx++) {
-    const ele = eles[idx];
-    ele.classList.add("katex-rendered");
-    try {
-      katex.render(ele.textContent, ele, {
-        displayMode: ele.getAttribute("data-katex-display") === "true",
-        throwOnError: false,
-      });
-    } catch (n) {
-      ele.style.color = "red";
-      ele.textContent = n.message;
+/*
+ * Front-end renderer.
+ *
+ * Renders `.katex-eq` elements produced by scripts/grammar.php. All rendering
+ * logic lives in katex-core.js so the editor preview cannot drift from the
+ * site.
+ */
+
+(function (window, document) {
+  "use strict";
+
+  function renderAll() {
+    if (window.iroKatex) {
+      return window.iroKatex.render(document);
     }
+    return 0;
   }
-}
 
-function katexRender() {
-  _katexRender(document);
-}
+  function renderWithin(root) {
+    if (window.iroKatex && root) {
+      return window.iroKatex.render(root);
+    }
+    return 0;
+  }
 
-document.addEventListener("DOMContentLoaded", function () {
-  katexRender();
+  function observe() {
+    // Only the article body is watched. Watching document.body for attributes
+    // and character data made every theme animation trigger a full scan.
+    var targets = document.querySelectorAll("#main, .entry-content, .comments");
+    if (!targets.length) {
+      targets = [document.body];
+    }
 
-  // Perform a KaTeX rendering step when the DOM is mutated.
-  const katexObserver = new MutationObserver(function (mutations) {
-    [].forEach.call(mutations, function (mutation) {
-      if (mutation.target && mutation.target instanceof Element) {
-        _katexRender(mutation.target);
+    var observer = new MutationObserver(function (mutations) {
+      for (var i = 0; i < mutations.length; i++) {
+        var added = mutations[i].addedNodes;
+        for (var j = 0; j < added.length; j++) {
+          var node = added[j];
+          if (node.nodeType !== 1) {
+            continue;
+          }
+          if (node.classList && node.classList.contains("katex-eq")) {
+            renderWithin(node.parentNode || document);
+          } else if (node.querySelector && node.querySelector(".katex-eq:not(.katex-rendered)")) {
+            renderWithin(node);
+          }
+        }
       }
     });
+
+    for (var i = 0; i < targets.length; i++) {
+      observer.observe(targets[i], { childList: true, subtree: true });
+    }
+  }
+
+  function boot() {
+    renderAll();
+    observe();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+
+  // Sakurairo replaces the article body through Pjax and re-builds the table of
+  // contents afterwards; both can introduce fresh math.
+  document.addEventListener("pjax:complete", function () {
+    renderAll();
+  });
+  document.addEventListener("tocEvent", function () {
+    renderAll();
   });
 
-  const katexObservationConfig = {
-    subtree: true,
-    childList: true,
-    attributes: true,
-    characterData: true,
-  };
-
-  katexObserver.observe(document.body, katexObservationConfig);
-});
+  window.iroKatexRender = renderAll;
+})(window, document);

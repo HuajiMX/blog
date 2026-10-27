@@ -84,7 +84,10 @@ function font_end_js_control()
         'entry_content_style' => iro_opt('entry_content_style'),
         'random_graphs_mts' => check(iro_opt('random_graphs_mts')),
         'code_highlight' => iro_opt('code_highlight_method', 'hljs'),
-        'theme_mathjax' => check(iro_opt('enable_theme_mathjax', true)),
+        // Math on this site is rendered by the KaTeX plugin. The theme's own
+        // MathJax path also claims `$…$` and would typeset the same formula a
+        // second time, so it stays off regardless of the option value.
+        'theme_mathjax' => false,
         'comment_upload_img' => iro_opt('img_upload_api') == 'off' ? false : true,
         'img_upload_max_size' => iro_opt('img_upload_max_size',5),
         'cache_cover' => check(iro_opt('cache_cover')),

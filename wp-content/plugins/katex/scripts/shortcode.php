@@ -45,12 +45,12 @@ function katex_display_inline_render($attributes, $content = null) {
         'latex'
     );
 
-    // Truthy -> 'true', falsy -> 'false'
-    $display = $attributes['display'] ? 'true' : 'false';
+    // WordPress turns the newlines inside a shortcode body into <br />.
+    $content = preg_replace("|<br\s*/?>|", "\n", (string) $content);
 
-    $content = preg_replace("|<br\s*/?>|", "\n", $content);
-    $encoded = htmlspecialchars(html_entity_decode($content));
-    return sprintf('<span class="katex-eq" data-katex-display="%s">%s</span>', $display, $encoded);
+    // Shared element builder: same markup, same data-katex-tex, so the
+    // renderer and the editor preview behave identically for shortcodes.
+    return katex_math_element($content, (bool) $attributes['display'], false);
 }
 
 

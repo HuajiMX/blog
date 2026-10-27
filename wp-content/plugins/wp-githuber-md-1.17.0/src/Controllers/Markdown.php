@@ -977,10 +977,10 @@ class Markdown extends ControllerAbstract {
 			$text = Module\TaskList::parse_gfm_task_list( $text );
 		}
 
-		// Render KaTeX inline markup.
-		if ( $this->is_support_katex ) {
-			$text = Module\KaTeX::katex_inline_markup( $text );
-		}
+		// KaTeX markup is produced by preserve_math() above (the KaTeX plugin
+		// owns the syntax) and rendered by the KaTeX plugin's render.js. Githuber's
+		// own `<code>$$…$$</code>` module is intentionally not used: it shipped a
+		// second, older KaTeX build and would double-render.
 
 		// Render MathJax inline markup.
 		if ( $this->is_support_mathjax ) {
@@ -999,68 +999,39 @@ class Markdown extends ControllerAbstract {
 	}
 
 	/**
-	 * Protect `$...$` and `$$...$$` math content from being mangled by the
-	 * Markdown parser by temporarily replacing it with placeholder tokens.
+	 * Protect `$...$` / `$$...$$` (and any other rule registered with the KaTeX
+	 * plugin) from being mangled by the Markdown parser.
+	 *
+	 * The syntax table, the code-fence protection and the element markup all
+	 * live in the KaTeX plugin (scripts/grammar.php), so adding a delimiter only
+	 * touches one file. Without the plugin we translate nothing and Markdown
+	 * behaves exactly as it did before.
 	 *
 	 * @param string $text   Post content (Markdown).
-	 * @param array  $tokens Placeholder -> original math mapping (by reference).
+	 * @param array  $tokens Placeholder -> array( 'html' => string, 'block' => bool ).
 	 * @return string
 	 */
 	protected function preserve_math( $text, &$tokens ) {
-		// Keep already-generated code blocks / inline code untouched.
-		$code_holders = array();
-		$text = preg_replace_callback(
-			'/<pre\b[^>]*>.*?<\/pre>|<code\b[^>]*>.*?<\/code>/is',
-			function ( $matches ) use ( &$code_holders ) {
-				$key = "\x1A" . 'GMDCODE' . count( $code_holders ) . "\x1A";
-				$code_holders[ $key ] = $matches[0];
-				return $key;
-			},
-			$text
-		);
-
-		// Display math: $$...$$ (may span multiple lines).
-		$text = preg_replace_callback(
-			'/\$\$([\s\S]+?)\$\$/',
-			function ( $matches ) use ( &$tokens ) {
-				$key = "\x1A" . 'GMDMATH' . count( $tokens ) . "\x1A";
-				$tokens[ $key ] = '$$' . $matches[1] . '$$';
-				return $key;
-			},
-			$text
-		);
-
-		// Inline math: $...$ (single line only).
-		$text = preg_replace_callback(
-			'/(?<![\\\\$])\$(?!\$)([^\$\n]+?)(?<![\\\\])\$(?!\$)/',
-			function ( $matches ) use ( &$tokens ) {
-				$key = "\x1A" . 'GMDMATH' . count( $tokens ) . "\x1A";
-				$tokens[ $key ] = '$' . $matches[1] . '$';
-				return $key;
-			},
-			$text
-		);
-
-		// Put code blocks back.
-		foreach ( $code_holders as $key => $value ) {
-			$text = str_replace( $key, $value, $text );
+		if ( ! function_exists( 'katex_markdown_preserve' ) ) {
+			return $text;
 		}
 
-		return $text;
+		return katex_markdown_preserve( $text, $tokens );
 	}
 
 	/**
 	 * Restore math content previously protected by preserve_math().
 	 *
 	 * @param string $text   Post content.
-	 * @param array  $tokens Placeholder -> original math mapping.
+	 * @param array  $tokens Placeholder -> array( 'html' => string, 'block' => bool ).
 	 * @return string
 	 */
 	protected function restore_math( $text, $tokens ) {
-		foreach ( $tokens as $key => $value ) {
-			$text = str_replace( $key, $value, $text );
+		if ( empty( $tokens ) || ! function_exists( 'katex_markdown_unpreserve' ) ) {
+			return $text;
 		}
-		return $text;
+
+		return katex_markdown_unpreserve( $text, $tokens );
 	}
 
 	/**

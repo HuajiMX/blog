@@ -90,11 +90,15 @@
     save({ attributes }) {
       const content = attributes.content;
 
+      // `data-katex-tex` is what render.js reads: the block's inner <pre> would
+      // otherwise be part of textContent, and the raw TeX has to survive
+      // wptexturize untouched.
       return createElement(
         "div",
         {
           className: "katex-eq",
-          "data-katex-display": "true"
+          "data-katex-display": "true",
+          "data-katex-tex": decodeHtml(content)
         },
         createElement("pre", {}, content)
       );

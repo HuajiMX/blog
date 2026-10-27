@@ -126,10 +126,14 @@ class Githuber {
 		}
 
 		// Module Name: KaTeX
-		if ( 'yes' === githuber_get_option( 'support_katex', 'githuber_modules' ) ) {
-			$module_katex = new Module\KaTeX();
-			$module_katex->init();
-		}
+		//
+		// Intentionally not initialised. This module shipped its own KaTeX
+		// 0.12.0 CSS/JS plus a `<code>$$…$$</code>` renderer; the site uses the
+		// KaTeX plugin (0.16.22) for all math, and loading both meant two KaTeX
+		// versions on one page with formulas rendered twice. Math is produced by
+		// the KaTeX plugin at save time (scripts/markdown.php) and on
+		// `the_content` (scripts/dollar.php). The class is kept because the
+		// settings screen still references its options.
 
 		// Module Name: Sequence Diagram
 		if ( 'yes' === githuber_get_option( 'support_sequence_diagram', 'githuber_modules' ) ) {

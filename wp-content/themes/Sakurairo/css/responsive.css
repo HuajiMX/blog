@@ -356,6 +356,20 @@
   border-radius: 50px;
 }
 
+/*
+ * A heading may contain a formula. Inside the TOC list it must read at list
+ * size, not at the content size that KaTeX would otherwise inherit, or one
+ * formula widens the whole panel.
+ */
+.mo_toc_panel .mo-toc-content .katex {
+  font-size: 1em;
+}
+
+.mo_toc_panel .mo-toc-content .katex-display {
+  overflow: visible;
+  margin: 0;
+}
+
 /* 自适应适配 */
 /* iOS Safari 特殊支持 */
 @supports (-webkit-touch-callout: none) {
