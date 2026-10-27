@@ -715,11 +715,18 @@ body.dark .entry-content hr:not(.wp-block-separator) {
  * A display formula can be wider than a phone. Keep it on one line (TeX
  * semantics) but give it its own horizontal scroll area instead of letting it
  * overflow the article and cause a page-wide scrollbar.
+ *
+ * The 2px right padding is not decoration: KaTeX positions the equation
+ * number with `.tag { position: absolute; right: 0 }`, and the fractional
+ * pixel widths of the glyph boxes make the scroll box 2px wider than its
+ * client area. With `overflow-x: auto` that 2px alone draws a scrollbar under
+ * every numbered formula, even a 23px one. Reserving the padding keeps short
+ * formulas scrollbar-free while genuinely too-wide ones still scroll.
  */
 .entry-content .katex-display {
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 2px 0 6px;
+  padding: 2px 2px 6px 0;
   margin: 1.1em 0;
   -webkit-overflow-scrolling: touch;
 }
