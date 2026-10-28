@@ -44,6 +44,16 @@
 - Sakurairo 主题的 MathJax 已固定关闭（`inc/swicher.php` 中 `theme_mathjax => false`），避免与 KaTeX 双重渲染；PJAX 场景由 katex 插件的 `__iroKatexLoader` 桥按需补载资源
 - 共享测试用例：`tests/math-cases.json`，用 `php tests/run-php.php` 与 `node tests/run-js.js` 双端运行，改动语法规则后必须两边全绿
 
+## 访客 IP 解析约定
+
+- **站点在又拍云 CDN 之后，但源站 nginx 没有 `ngx_http_realip_module` 规则**（`/www/server/panel/vhost/nginx/blog.huajimc.cn.conf` 里没有 `set_real_ip_from` / `real_ip_header`）。因此 PHP 看到的 `$_SERVER['REMOTE_ADDR']` 是**回源节点地址**（实测固定为 `36.150.185.23`–`36.150.185.27`，江苏南京移动），不是访客地址。
+- 又拍云回源时会用真实访客 IP **覆写** `X-Real-IP`、`Client-IP`，并写入标记头 `X-Via: shanks/<版本>`；但 `X-Forwarded-For` 在部分回源模式下会**原样透传客户端自带值**，可以伪造，不能单独当作真实 IP。
+- **唯一取值入口是 `wp-content/mu-plugins/iro-real-ip.php`**（解析逻辑在同目录 `iro-real-ip/resolver.php`）。它在请求早期把 `REMOTE_ADDR` 回填为真实访客 IP，并接管 `pre_comment_user_ip` / `wpb_get_ip`。取值优先级为 `X-Real-IP` → `Client-IP` → `X-Forwarded-For` → `REMOTE_ADDR`；新代码需要 IP 时调用 `iro_get_client_ip()`，**不要**再自己解析转发头。
+- 主题 `get_the_user_ip()`（`functions.php`）已改为复用该入口，只为兼容旧调用点保留。
+- **源站可被绕过 CDN 直连**（`47.117.246.218:443` 直接可达，实测带伪造头也能打进来）。因此转发头只在「确认请求来自边缘节点」时才采信：配置了常量 `IRO_REAL_IP_TRUSTED_CIDRS` 时校验回源网段；未配置时要求 `X-Via` 标记存在且 `X-Real-IP` 与 `Client-IP` 一致。**注意这只是软防护**——要真正杜绝伪造，需在 nginx 侧只放行 CDN 回源段并删掉直连入口；改完这条之前不要在 IP 上做封禁、限流或风控决策。
+- 历史数据：本次修复前的评论 `comment_author_IP` 全部是节点地址（`36.150.185.*`），无法事后还原真实 IP；`wp_commentmeta` 里的 `iro_ip_location` 也是基于节点 IP 解析出来的「江苏 南京」，需要在修复后按需重建。
+- 回归测试：`php tests/run-ip.php`（纯函数，覆盖取值优先级、伪造拒绝、CIDR 匹配）与 `php tests/run-ip-wp.php`（走 WordPress 真实过滤器链，用 `IRO_EXPECT_IP` 指定期望值）。
+
 ## 资源缓存失效与 PJAX 注意
 
 - 可变的前端资源（`katex-core.js`、`render.js` 等会被重构的文件）在输出 URL 时必须带上按文件修改时间生成的版本参数（`filemtime`），而不是固定的插件版本号常量。磁盘文件更新后若 `?ver` 不变，nginx/边缘缓存会对同一 URL 持续返回旧字节，导致线上加载到旧脚本；主题 `sakura_scripts` 的灯箱桥与 katex 插件的 `katex_asset_version()`（`scripts/resource.php`）均已按此处理，新增类似资源沿用同一做法。
