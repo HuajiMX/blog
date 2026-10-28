@@ -52,6 +52,7 @@
 - 主题 `get_the_user_ip()`（`functions.php`）已改为复用该入口，只为兼容旧调用点保留。
 - **源站可被绕过 CDN 直连**（`47.117.246.218:443` 直接可达，实测带伪造头也能打进来）。因此转发头只在「确认请求来自边缘节点」时才采信：配置了常量 `IRO_REAL_IP_TRUSTED_CIDRS` 时校验回源网段；未配置时要求 `X-Via` 标记存在且 `X-Real-IP` 与 `Client-IP` 一致。**注意这只是软防护**——要真正杜绝伪造，需在 nginx 侧只放行 CDN 回源段并删掉直连入口；改完这条之前不要在 IP 上做封禁、限流或风控决策。
 - 历史数据：本次修复前的评论 `comment_author_IP` 全部是节点地址（`36.150.185.*`），无法事后还原真实 IP；`wp_commentmeta` 里的 `iro_ip_location` 也是基于节点 IP 解析出来的「江苏 南京」，需要在修复后按需重建。
+- **修复只作用于 PHP 层**：`/www/wwwlogs/blog.huajimc.cn.log` 里的 `$remote_addr` 记录的仍是回源节点 IP（nginx 在 PHP 之前就写完了日志）。排查访客来源要看 `$http_x_real_ip`，或者用下面那条临时探针；不要拿访问日志首列当真实访客 IP。
 - 回归测试：`php tests/run-ip.php`（纯函数，覆盖取值优先级、伪造拒绝、CIDR 匹配）与 `php tests/run-ip-wp.php`（走 WordPress 真实过滤器链，用 `IRO_EXPECT_IP` 指定期望值）。
 
 ## 资源缓存失效与 PJAX 注意
