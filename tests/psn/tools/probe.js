@@ -78,7 +78,7 @@ const mobile = process.argv.includes('--mobile');
 			var r=el.getBoundingClientRect();
 			var cs=getComputedStyle(el);
 			var input=el.querySelector('input.psn-input');
-			var btn=el.querySelector('.psn-submit');
+			var btn=el.querySelector('.psn-button');
 			var ics=input?getComputedStyle(input):null;
 			var bcs=btn?getComputedStyle(btn):null;
 			return {

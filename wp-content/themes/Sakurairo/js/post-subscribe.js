@@ -45,15 +45,19 @@
             return;
         }
         var button = card.querySelector('.psn-button');
+        // 只替换文字节点，按钮里的图标要留着。
+        var label = button ? button.querySelector('.psn-button__text') : null;
         var inputs = card.querySelectorAll('.psn-input');
         if (button) {
             button.disabled = busy;
             button.classList.toggle(SUBMITTING, busy);
-            if (busy) {
-                button.dataset.label = button.textContent;
-                button.textContent = '提交中…';
-            } else if (button.dataset.label) {
-                button.textContent = button.dataset.label;
+            if (label) {
+                if (busy) {
+                    button.dataset.label = label.textContent;
+                    label.textContent = '提交中…';
+                } else if (button.dataset.label) {
+                    label.textContent = button.dataset.label;
+                }
             }
         }
         Array.prototype.forEach.call(inputs, function (input) {

@@ -2,8 +2,12 @@
 /**
  * 首页底部的新文章订阅卡片。
  *
- * 这一块 UI 属于主题：样式写在 css/subscribe.css 并随 theme.css 一起拼接，
+ * 这一块 UI 属于主题：样式写在 css/subscribe-card.css 并随 theme.css 一起拼接，
  * 因此改了样式 cb 参数会自动变化，不需要清缓存。
+ *
+ * 观感直接复刻主题自己的评论表单（h3#comments-list-title + .comment-respond）：
+ * 标题带主题色高亮条，卡片是 15px 圆角的半透明玻璃面，输入框与提交按钮
+ * 沿用主题的 10px 圆角 / 45px 高度 / 主题色实底，暗色模式走主题的 --dark-* 变量。
  *
  * 插件的职责只是数据与接口（post-subscribe-notifier）：
  * - 通过 `psn_card_renderer` 过滤器把本文件注册进去；
@@ -34,15 +38,17 @@ function iro_psn_card_html( $source = 'home_card', $args = array() ) {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$uid = isset( $_GET['psn_uid'] ) ? (int) $_GET['psn_uid'] : 0;
 
-		$html  = '<section id="psn-subscribe" class="psn-card psn-card--confirm" data-source="unsub">';
-		$html .= '<div class="psn-card__inner">';
-		$html .= '<h2 class="psn-card__title">' . esc_html__( '确定要退订新文章推送吗？', 'sakurairo' ) . '</h2>';
+		$html  = '<section id="psn-subscribe" class="psn-subscribe psn-subscribe--confirm" data-source="unsub">';
+		$html .= '<h2 class="psn-subscribe__title">' . esc_html__( '退订新文章推送', 'sakurairo' ) . '</h2>';
+		$html .= '<div class="psn-card">';
+		$html .= '<p class="psn-card__desc">' . esc_html__( '确认后，你将不再收到新文章推送邮件。此操作不可撤销，之后仍可重新订阅。', 'sakurairo' ) . '</p>';
 		$html .= '<form class="psn-form" method="post" action="' . esc_url( home_url( '/' ) ) . '">';
 		$html .= '<input type="hidden" name="psn_unsub_do" value="1" />';
 		$html .= '<input type="hidden" name="psn_unsub" value="' . esc_attr( $token ) . '" />';
 		$html .= '<input type="hidden" name="psn_uid" value="' . esc_attr( (string) $uid ) . '" />';
+		$html .= '<div class="psn-actions">';
 		$html .= '<button type="submit" class="psn-button psn-button--danger">' . esc_html__( '确认退订', 'sakurairo' ) . '</button>';
-		$html .= '</form></div></section>';
+		$html .= '</div></form></div></section>';
 
 		return $html;
 	}
@@ -61,17 +67,11 @@ function iro_psn_card_html( $source = 'home_card', $args = array() ) {
 	$action = esc_url( remove_query_arg( array( 'psn_status', 'psn_confirm', 'psn_unsub', 'psn_uid' ) ) );
 	$ajax   = esc_url( admin_url( 'admin-ajax.php' ) );
 
-	// 主题色可能很浅（#a4cdf6 上白字只有 1.66:1），压深一档再用于按钮与图标。
-	$button_bg = class_exists( 'PSN_Color' ) ? PSN_Color::button_palette()['accent'] : '';
-
-	$html  = '<section id="psn-subscribe" class="psn-card" data-source="' . esc_attr( $source ) . '" data-ajax="' . $ajax . '"' . ( '' !== $button_bg ? ' style="--psn-accent:' . esc_attr( $button_bg ) . '"' : '' ) . '>';
-	$html .= '<div class="psn-card__inner">';
-	$html .= '<div class="psn-card__head">';
-	$html .= '<span class="psn-card__icon"><i class="fa-regular fa-envelope" aria-hidden="true"></i></span>';
-	$html .= '<div class="psn-card__heading">';
-	$html .= '<h2 class="psn-card__title">' . esc_html( $title ) . '</h2>';
+	// 颜色一律交给主题：卡片 CSS 里直接用 --article-theme-highlight / --theme-skin-matching。
+	$html  = '<section id="psn-subscribe" class="psn-subscribe" data-source="' . esc_attr( $source ) . '">';
+	$html .= '<h2 class="psn-subscribe__title">' . esc_html( $title ) . '<span>' . esc_html__( 'Subscribe', 'sakurairo' ) . '</span></h2>';
+	$html .= '<div class="psn-card" data-ajax="' . $ajax . '">';
 	$html .= '<p class="psn-card__desc">' . esc_html( $desc ) . '</p>';
-	$html .= '</div></div>';
 
 	$html .= '<p class="psn-notice' . esc_attr( $notice_class ) . '" role="status" aria-live="polite"' . ( '' === $notice_text ? ' hidden' : '' ) . '>' . esc_html( $notice_text ) . '</p>';
 
@@ -81,12 +81,16 @@ function iro_psn_card_html( $source = 'home_card', $args = array() ) {
 	// 蜜罐：真人看不见也不会填，填了就是机器人。
 	$html .= '<div class="psn-honeypot" aria-hidden="true"><label>Website<input type="text" name="psn_website" value="" tabindex="-1" autocomplete="off" /></label></div>';
 	$html .= '<div class="psn-fields">';
-	$html .= '<label class="psn-field psn-field--email"><span class="psn-label">' . esc_html__( '邮箱地址', 'sakurairo' ) . '</span>';
-	$html .= '<input type="email" name="psn_email" class="psn-input" required maxlength="254" autocomplete="email" placeholder="you@example.com" /></label>';
-	$html .= '<label class="psn-field psn-field--name"><span class="psn-label">' . esc_html__( '昵称（可选）', 'sakurairo' ) . '</span>';
-	$html .= '<input type="text" name="psn_name" class="psn-input" maxlength="100" autocomplete="nickname" placeholder="' . esc_attr__( '可选', 'sakurairo' ) . '" /></label>';
+	$html .= '<label class="psn-field psn-field--email"><span class="psn-label screen-reader-text">' . esc_html__( '邮箱地址', 'sakurairo' ) . '</span>';
+	$html .= '<input type="email" name="psn_email" class="psn-input" required maxlength="254" autocomplete="email" placeholder="' . esc_attr__( '邮箱（必填）', 'sakurairo' ) . '" /></label>';
+	$html .= '<label class="psn-field psn-field--name"><span class="psn-label screen-reader-text">' . esc_html__( '昵称（可选）', 'sakurairo' ) . '</span>';
+	$html .= '<input type="text" name="psn_name" class="psn-input" maxlength="100" autocomplete="nickname" placeholder="' . esc_attr__( '昵称（可选）', 'sakurairo' ) . '" /></label>';
 	$html .= '</div>';
-	$html .= '<button type="submit" class="psn-button">' . esc_html__( '订阅', 'sakurairo' ) . '</button>';
+	$html .= '<div class="psn-actions">';
+	$html .= '<button type="submit" class="psn-button"><i class="fa-regular fa-paper-plane" aria-hidden="true"></i><span class="psn-button__text">' . esc_html__( '订阅', 'sakurairo' ) . '</span></button>';
+	// 备用订阅渠道：桌面端与按钮同一行，补上按钮左侧的空白；窄屏由 CSS 排到按钮下方。
+	$html .= '<p class="psn-alt">' . esc_html__( '【通过 QQ 订阅】添加 QQ：2776553225 后发送“博客订阅”，按提示操作完成订阅。', 'sakurairo' ) . '</p>';
+	$html .= '</div>';
 	$html .= '</form>';
 	$html .= '</div></section>';
 

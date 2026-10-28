@@ -548,6 +548,7 @@ function sakura_scripts()
         wp_enqueue_style('iro-responsive', $core_lib_basepath . '/css/responsive.css', array('iro-css'), IRO_VERSION);
         wp_enqueue_style('iro-animation', $core_lib_basepath . '/css/animation.css', array('iro-css'), IRO_VERSION);
         wp_enqueue_style('iro-templates', $core_lib_basepath . '/css/templates.css', array('iro-css'), IRO_VERSION);
+        wp_enqueue_style('iro-subscribe-card', $core_lib_basepath . '/css/subscribe-card.css', array('iro-css'), @filemtime(get_template_directory() . '/css/subscribe-card.css') ?: IRO_VERSION);
 
         $content_style = (iro_opt('entry_content_style') == 'sakurairo' ? 'sakura' : 'github');
         $entry_content_ver = @filemtime(get_template_directory() . '/css/content-style/' . $content_style . '.css') ?: IRO_VERSION;

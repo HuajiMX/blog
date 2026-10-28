@@ -60,9 +60,9 @@ const mobile = process.argv.includes('--mobile');
 				return {label:label,top:Math.round(r.top),bottom:Math.round(r.bottom),h:Math.round(r.height),
 					mt:cs.marginTop,mb:cs.marginBottom,pt:cs.paddingTop,pb:cs.paddingBottom,gap:cs.gap,display:cs.display};
 			}
-			var items=[box('.psn-card-inner','inner'),box('.psn-form','form'),box('.psn-fields','fields'),
-				box('.psn-field','field-email'),box('.psn-field-name','field-name'),
-				box('.psn-form .psn-submit','submit')];
+			var items=[box('.psn-subscribe__title','title'),box('.psn-card','card'),box('.psn-form','form'),box('.psn-fields','fields'),
+				box('.psn-field--email','field-email'),box('.psn-field--name','field-name'),
+				box('.psn-actions .psn-button','submit')];
 			return {found:true, width:Math.round(card.getBoundingClientRect().width), items:items};
 		})()`,
 	}, session);
