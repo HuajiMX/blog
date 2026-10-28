@@ -12,6 +12,10 @@ wp-content/tmp/
 *.log
 debug.log
 
+# 调试产生的临时产物（后台截图 cookie、WebHook 接收记录）
+tests/psn/_cookies.json
+tests/psn/_received.jsonl
+
 # 备份压缩包
 *.zip
 *.tar
