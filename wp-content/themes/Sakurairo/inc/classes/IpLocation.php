@@ -8,18 +8,30 @@ namespace Sakura\API;
  * 数据源说明：
  * - 主用 ipwho.is：HTTPS、支持中文与 IPv6、无频率限制，实测从源站 20/20 成功、约 0.7s。
  * - 备用 ip-api.com：原实现用这个，但它是 HTTP 且从源站实测约 40% 超时（5s 才失败），
- *   只在主源失败时兜底，超时被压到很短，避免把页面拖住。
+ *   只在主源不可用时兜底，超时被压到很短，避免把页面拖住。
  *
- * 失败处理：任何取源失败都不再向页面抛警告，而是写日志并做 10 分钟负缓存，
- * 保证同一个 IP 在一个窗口期内最多付出一次超时代价。
+ * 失败处理：
+ * - 任何取源失败都不再向页面抛警告（改为 error_log），只返回 Unknown。
+ * - 「取源连不上」与「这个 IP 查不到」分开对待：前者开 10 分钟负缓存，
+ *   后者是单次结果，不拖累其他 IP。
  */
 class IpLocation
 {
-    /** 失败后多久内不再尝试取源（秒）。 */
+    /** 取源成功。 */
+    const LOOKUP_OK = 'ok';
+    /** 取源可达，但没有这个 IP 的记录。 */
+    const LOOKUP_NOT_FOUND = 'not_found';
+    /** 取源本身不可用（超时、网络错误、非 200）。 */
+    const LOOKUP_UNAVAILABLE = 'unavailable';
+
+    /** 取源不可用后，多久内不再尝试（秒）。 */
     const OUTAGE_TTL = 600;
 
     /** 主源超时（秒），可通过过滤器 sakura_geo_lookup_timeout 调整。 */
-    const DEFAULT_TIMEOUT = 3;
+    const DEFAULT_TIMEOUT = 2;
+
+    /** 兜底源超时上限（秒）。 */
+    const FALLBACK_TIMEOUT = 1.5;
 
     /** @var string 要查询的IP地址 */
     private $ip;
@@ -30,9 +42,32 @@ class IpLocation
     /** @var string 城市 */
     private $city = '';
 
+    /** @var array 支持的语言映射 */
+    private static $languages = array(
+        'fr'    => 'fr',
+        'en'    => 'en',
+        'zh_CN' => 'zh-CN',
+        'de'    => 'de',
+        'es'    => 'es',
+        'pt_BR' => 'pt-BR',
+        'ja'    => 'ja',
+        'ru'    => 'ru',
+    );
+
     public function __construct(string $ip)
     {
         $this->ip = $ip;
+    }
+
+    /**
+     * 当前站点的接口语言参数。
+     *
+     * @return string
+     */
+    private function getLanguage()
+    {
+        $lang = get_locale();
+        return isset(self::$languages[$lang]) ? self::$languages[$lang] : 'en';
     }
 
     /**
@@ -47,7 +82,9 @@ class IpLocation
     }
 
     /**
-     * 是否为“取源不可用”窗口期。
+     * 是否为「取源不可用」窗口期。
+     *
+     * 只针对取源连不上，不针对某个 IP 查不到。
      *
      * @return bool
      */
@@ -72,20 +109,26 @@ class IpLocation
      * 这里用 error_log 而不是 trigger_error：线上 php.ini 是 display_errors=On
      * 且 WP_DEBUG=false（WordPress 因此不会把 display_errors 关掉），
      * trigger_error(E_USER_WARNING) 会把警告直接印到访客看到的页面上。
-     * 只在进入不可用窗口时记录一次，避免刷日志。
      *
      * @param string $message 失败原因。
      * @return void
      */
     private function logFailure($message)
     {
-        if (!defined('WP_DEBUG') || !WP_DEBUG) {
-            // 生产环境仅在新窗口开启时记一条，避免重复刷屏。
-            if ($this->isOutage()) {
-                return;
-            }
-        }
         error_log('[iro-geo] ' . $message);
+    }
+
+    /**
+     * 写入解析结果。
+     *
+     * @param array $data 归一化后的字段。
+     * @return void
+     */
+    private function setLocation(array $data)
+    {
+        $this->country = isset($data['country']) ? (string) $data['country'] : '';
+        $this->region  = isset($data['region']) ? (string) $data['region'] : '';
+        $this->city    = isset($data['city']) ? (string) $data['city'] : '';
     }
 
     /**
@@ -93,25 +136,11 @@ class IpLocation
      *
      * 接口文档：https://ipwho.is/
      *
-     * @return boolean 成功返回true，失败返回false
+     * @return string 取源状态常量。
      */
     private function getIpLocationFromIpWhois()
     {
-        $languages = array(
-            'fr'    => 'fr',
-            'en'    => 'en',
-            'zh_CN' => 'zh-CN',
-            'de'    => 'de',
-            'es'    => 'es',
-            'pt_BR' => 'pt-BR',
-            'ja'    => 'ja',
-            'ru'    => 'ru',
-        );
-
-        $lang = get_locale();
-        $lang = isset($languages[$lang]) ? $languages[$lang] : 'en';
-
-        $url = 'https://ipwho.is/' . rawurlencode($this->ip) . '?lang=' . rawurlencode($lang);
+        $url = 'https://ipwho.is/' . rawurlencode($this->ip) . '?lang=' . rawurlencode($this->getLanguage());
 
         $response = wp_remote_get($url, array(
             'timeout'     => $this->getTimeout(),
@@ -121,30 +150,34 @@ class IpLocation
 
         if (is_wp_error($response)) {
             $this->logFailure('ipwho.is 请求失败：' . $response->get_error_message());
-            return false;
+            return self::LOOKUP_UNAVAILABLE;
         }
 
-        if (200 !== (int) wp_remote_retrieve_response_code($response)) {
-            $this->logFailure('ipwho.is 返回状态码 ' . wp_remote_retrieve_response_code($response));
-            return false;
+        $code = (int) wp_remote_retrieve_response_code($response);
+        if (200 !== $code) {
+            $this->logFailure('ipwho.is 返回状态码 ' . $code);
+            return self::LOOKUP_UNAVAILABLE;
         }
 
         $data = json_decode(wp_remote_retrieve_body($response), true);
         if (!is_array($data)) {
             $this->logFailure('ipwho.is 返回的不是 JSON');
-            return false;
+            return self::LOOKUP_UNAVAILABLE;
         }
 
         if (empty($data['success'])) {
             $message = isset($data['message']) ? $data['message'] : 'unknown error';
-            $this->logFailure('ipwho.is 查询失败：' . $message);
-            return false;
+            $this->logFailure('ipwho.is 查不到该 IP：' . $message);
+            return self::LOOKUP_NOT_FOUND;
         }
 
-        $this->country = isset($data['country']) ? (string) $data['country'] : '';
-        $this->region  = isset($data['region']) ? (string) $data['region'] : '';
-        $this->city    = isset($data['city']) ? (string) $data['city'] : '';
-        return true;
+        $this->setLocation(array(
+            'country' => isset($data['country']) ? $data['country'] : '',
+            'region'  => isset($data['region']) ? $data['region'] : '',
+            'city'    => isset($data['city']) ? $data['city'] : '',
+        ));
+
+        return $this->country !== '' ? self::LOOKUP_OK : self::LOOKUP_NOT_FOUND;
     }
 
     /**
@@ -152,61 +185,53 @@ class IpLocation
      *
      * 接口文档：https://ip-api.com/docs/api:json
      *
-     * @return boolean 成功返回true，失败返回false
+     * @return string 取源状态常量。
      */
     private function getIpLocationByIpApi()
     {
         // 检查速率限制
         if (get_transient('ip_location_rate_limit')) {
             $this->logFailure('ip-api.com 处于速率限制窗口');
-            return false;
+            return self::LOOKUP_UNAVAILABLE;
         }
 
-        $languages = array(
-            'fr'    => 'fr',
-            'en'    => 'en',
-            'zh_CN' => 'zh-CN',
-            'de'    => 'de',
-            'es'    => 'es',
-            'pt_BR' => 'pt-BR',
-            'ja'    => 'ja',
-            'ru'    => 'ru',
-        );
-
-        $lang = get_locale();
-        $lang = isset($languages[$lang]) ? $languages[$lang] : 'en';
-
-        $url = 'http://ip-api.com/json/' . rawurlencode($this->ip) . '?fields=49177&lang=' . rawurlencode($lang);
+        $url = 'http://ip-api.com/json/' . rawurlencode($this->ip)
+            . '?fields=49177&lang=' . rawurlencode($this->getLanguage());
 
         // 兜底源给更短的超时，避免主源已经慢过之后又把页面拖满。
-        $timeout = min($this->getTimeout(), 2.0);
-
-        $response = wp_remote_get($url, array('timeout' => $timeout));
+        $response = wp_remote_get($url, array('timeout' => min($this->getTimeout(), self::FALLBACK_TIMEOUT)));
 
         if (is_wp_error($response)) {
             $this->logFailure('ip-api.com 请求失败：' . $response->get_error_message());
-            return false;
+            return self::LOOKUP_UNAVAILABLE;
         }
 
         $headers = wp_remote_retrieve_headers($response);
         if (isset($headers['X-Rl'], $headers['X-Ttl'])) {
-            $remaining = (int) $headers['X-Rl'];
-            if ($remaining <= 2) {
+            if ((int) $headers['X-Rl'] <= 2) {
                 set_transient('ip_location_rate_limit', 'is_limit', max(1, (int) $headers['X-Ttl']));
             }
         }
 
         $data = json_decode(wp_remote_retrieve_body($response), true);
-        if (!is_array($data) || empty($data['status']) || 'success' !== $data['status']) {
-            $message = isset($data['message']) ? $data['message'] : '返回数据不可用';
-            $this->logFailure('ip-api.com 查询失败：' . $message);
-            return false;
+        if (!is_array($data)) {
+            $this->logFailure('ip-api.com 返回的不是 JSON');
+            return self::LOOKUP_UNAVAILABLE;
         }
 
-        $this->country = isset($data['country']) ? (string) $data['country'] : '';
-        $this->region  = isset($data['regionName']) ? (string) $data['regionName'] : '';
-        $this->city    = isset($data['city']) ? (string) $data['city'] : '';
-        return true;
+        if (empty($data['status']) || 'success' !== $data['status']) {
+            $message = isset($data['message']) ? $data['message'] : '返回数据不可用';
+            $this->logFailure('ip-api.com 查不到该 IP：' . $message);
+            return self::LOOKUP_NOT_FOUND;
+        }
+
+        $this->setLocation(array(
+            'country' => isset($data['country']) ? $data['country'] : '',
+            'region'  => isset($data['regionName']) ? $data['regionName'] : '',
+            'city'    => isset($data['city']) ? $data['city'] : '',
+        ));
+
+        return $this->country !== '' ? self::LOOKUP_OK : self::LOOKUP_NOT_FOUND;
     }
 
     /**
@@ -221,20 +246,6 @@ class IpLocation
             'region'  => $this->region,
             'city'    => $this->city,
         );
-    }
-
-    /**
-     * 检查IP地理位置信息的字段是否完整
-     *
-     * 只要求国家非空：不少 IP（尤其移动网络、IPv6）没有 region/city 粒度，
-     * 原实现要求三者齐全，会把“查到了但没有城市”误判成失败并抛警告。
-     *
-     * @param array $data 地理位置信息数组
-     * @return boolean true，可用；false，不可用
-     */
-    private function checkCompleteness(array $data)
-    {
-        return !empty($data['country']);
     }
 
     /**
@@ -274,14 +285,27 @@ class IpLocation
             return false;
         }
 
-        $ok = $this->getIpLocationFromIpWhois() || $this->getIpLocationByIpApi();
+        $status = $this->getIpLocationFromIpWhois();
 
-        $data = $this->outputLocation();
-        if ($ok && $this->checkCompleteness($data)) {
-            return $data;
+        // 主源可用但查不到该 IP：换备用源也大概率查不到，直接收工，
+        // 不要因为一个「查不到」的 IP 就开全局负缓存窗口。
+        if (self::LOOKUP_NOT_FOUND === $status) {
+            return false;
         }
 
-        $this->markOutage();
+        if (self::LOOKUP_UNAVAILABLE === $status) {
+            $status = $this->getIpLocationByIpApi();
+        }
+
+        if (self::LOOKUP_OK === $status) {
+            return $this->outputLocation();
+        }
+
+        if (self::LOOKUP_UNAVAILABLE === $status) {
+            // 两个源都连不上，才认为是取源故障。
+            $this->markOutage();
+        }
+
         return false;
     }
 }
