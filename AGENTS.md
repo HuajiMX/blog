@@ -22,6 +22,8 @@
   ```
 - **opcache 关闭时间戳校验**：项目位于 `/mnt/e`（9p 挂载），每次 stat 约 1ms，而单次请求要 include 1100+ 个 PHP 文件。已在 `/etc/php/8.4/fpm/conf.d/99-local-dev.ini` 中设置 `opcache.validate_timestamps=0`、`opcache.revalidate_freq=0`、`opcache.enable_file_override=1`，把首页 TTFB 从 5–14s 降到约 0.5s。**代价是改了 PHP 源码后 opcache 不会自动失效，改完必须 `systemctl restart php8.4-fpm`。**
 - **本地已停用 `wpforms-lite`**：该插件零表单、零短代码引用，但前台引导会额外加载 409 个文件，是本地延迟的主要来源。`active_plugins` 中已移除；如需在本地测试表单请自行启用。同时 `wp-paragraph-comments` 的目录名已更正为 `wp-paragraph-comments-main`。
+- **本地 SMTP 发不出信**：`wp_mail` 走 WP Mail SMTP → `smtp.126.com:465`，但在 WSL 里实测 `wp_mail()` 返回 false（`Could not connect to SMTP host`），这是本地网络/认证限制，不是代码 bug。验证与邮件相关的逻辑请用 `pre_wp_mail` 拦截（`tests/psn/run.php` 就是这么做的），不要靠「真发一封」来判断成败。
+- **本地管理员密码未知**：不要为一个截图去改账号密码。需要后台截图时用 `php tests/psn/tools/mint-cookie.php` 生成登录 cookie，再用 `tests/psn/tools/admin-shot-cookie.js` 打开页面——它只创建 session token，不动账号数据。
 
 ### 本地已知的非故障现象
 
