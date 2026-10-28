@@ -9,7 +9,8 @@ $style_files = [
     'dark.css',
     'responsive.css',
     'animation.css',
-    'templates.css'
+    'templates.css',
+    'subscribe-card.css'
 ];
 
 if (isset($_GET['sakura_header'])) {

@@ -219,14 +219,143 @@ class PSN_Color {
 	}
 
 	/**
-	 * 供卡片使用的三个颜色：按钮底色、按钮前景、焦点环颜色。
+	 * 保留色相，只把亮度压深/提亮，直到指定前景色在它上面达到对比度。
+	 *
+	 * 用于「主题色 + 白字」这类场景：主题色可能很浅（本项目 #a4cdf6），
+	 * 白字压上去只有 1.66:1；这里沿 HSL 只调亮度，色相与饱和度不变，
+	 * 因此按钮仍是主题的那个蓝色，只是深了一档。
+	 *
+	 * @param string $hex    背景色.
+	 * @param string $fg     前景色.
+	 * @param float  $target 目标对比度.
+	 * @return string
+	 */
+	public static function darken_until( $hex, $fg = '#ffffff', $target = self::AA ) {
+		$hex = self::normalize_hex( $hex );
+		$rgb = self::to_rgb( $hex );
+
+		$hsl = self::to_hsl( $rgb );
+
+		// 往更暗或更亮的方向调，取能让对比度升高的一侧。
+		$towards_dark = self::contrast( '#000000', $fg ) >= self::contrast( '#ffffff', $fg );
+
+		for ( $step = 1; $step <= 50; $step++ ) {
+			$l = $towards_dark ? max( 0.0, $hsl[2] - $step * 0.02 ) : min( 1.0, $hsl[2] + $step * 0.02 );
+
+			$candidate = self::to_hex( self::from_hsl( $hsl[0], $hsl[1], $l ) );
+
+			if ( self::contrast( $candidate, $fg ) >= $target ) {
+				return $candidate;
+			}
+		}
+
+		return $towards_dark ? '#000000' : '#ffffff';
+	}
+
+	/**
+	 * RGB 转 HSL。
+	 *
+	 * @param int[] $rgb RGB.
+	 * @return array{0:float,1:float,2:float} h/s/l，各为 0..1 或角度.
+	 */
+	private static function to_hsl( $rgb ) {
+		$r = $rgb[0] / 255;
+		$g = $rgb[1] / 255;
+		$b = $rgb[2] / 255;
+
+		$max = max( $r, $g, $b );
+		$min = min( $r, $g, $b );
+		$l   = ( $max + $min ) / 2;
+
+		if ( abs( $max - $min ) < 1e-6 ) {
+			return array( 0.0, 0.0, $l );
+		}
+
+		$d = $max - $min;
+		$s = $l > 0.5 ? $d / ( 2 - $max - $min ) : $d / ( $max + $min );
+
+		if ( $max === $r ) {
+			$h = ( ( $g - $b ) / $d + ( $g < $b ? 6 : 0 ) ) / 6;
+		} elseif ( $max === $g ) {
+			$h = ( ( $b - $r ) / $d + 2 ) / 6;
+		} else {
+			$h = ( ( $r - $g ) / $d + 4 ) / 6;
+		}
+
+		return array( $h, $s, $l );
+	}
+
+	/**
+	 * HSL 转 RGB。
+	 *
+	 * @param float $h 色相 0..1.
+	 * @param float $s 饱和度 0..1.
+	 * @param float $l 亮度 0..1.
+	 * @return int[]
+	 */
+	private static function from_hsl( $h, $s, $l ) {
+		if ( $s <= 0.0 ) {
+			$v = (int) round( $l * 255 );
+
+			return array( $v, $v, $v );
+		}
+
+		$q = $l < 0.5 ? $l * ( 1 + $s ) : $l + $s - $l * $s;
+		$p = 2 * $l - $q;
+
+		$channel = static function ( $t ) use ( $p, $q ) {
+			if ( $t < 0 ) {
+				$t += 1;
+			}
+			if ( $t > 1 ) {
+				$t -= 1;
+			}
+			if ( $t < 1 / 6 ) {
+				return $p + ( $q - $p ) * 6 * $t;
+			}
+			if ( $t < 1 / 2 ) {
+				return $q;
+			}
+			if ( $t < 2 / 3 ) {
+				return $p + ( $q - $p ) * ( 2 / 3 - $t ) * 6;
+			}
+
+			return $p;
+		};
+
+		return array(
+			(int) round( $channel( $h + 1 / 3 ) * 255 ),
+			(int) round( $channel( $h ) * 255 ),
+			(int) round( $channel( $h - 1 / 3 ) * 255 ),
+		);
+	}
+
+	/**
+	 * RGB 转 hex。
+	 *
+	 * @param int[] $rgb RGB.
+	 * @return string
+	 */
+	private static function to_hex( $rgb ) {
+		return sprintf(
+			'#%02x%02x%02x',
+			max( 0, min( 255, $rgb[0] ) ),
+			max( 0, min( 255, $rgb[1] ) ),
+			max( 0, min( 255, $rgb[2] ) )
+		);
+	}
+
+	/**
+	 * 按钮配色：主题色压到白字可读，保留色相。
 	 *
 	 * @param string $accent 主题色.
 	 * @return array{accent:string,on_accent:string,ring:string}
 	 */
 	public static function button_palette( $accent = '' ) {
 		$accent = '' !== $accent ? self::normalize_hex( $accent ) : self::theme_accent();
-		$pair   = self::readable_pair( $accent );
+
+		// 主题色 + 白字是主题的既有规范，所以这里把底色压深而不是换字色。
+		$safe_bg = self::darken_until( $accent, '#ffffff', self::AA );
 
 		/**
 		 * 过滤按钮配色。
@@ -237,9 +366,9 @@ class PSN_Color {
 		return apply_filters(
 			'psn_button_palette',
 			array(
-				'accent'    => $pair['bg'],
-				'on_accent' => $pair['fg'],
-				'ring'      => self::rgba( $pair['bg'], 0.32 ),
+				'accent'    => $safe_bg,
+				'on_accent' => '#ffffff',
+				'ring'      => self::rgba( $safe_bg, 0.32 ),
 			),
 			$accent
 		);

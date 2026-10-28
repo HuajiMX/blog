@@ -9,12 +9,15 @@
 
 ## 前台
 
-- **首页底部订阅卡片**：只在首页第一页输出（`is_home() && !is_paged()`），挂在 `get_footer`，因此落在主题 PJAX 容器 `#page` 内，PJAX 导航回首页时会被一起重建。
-- **短代码 `[psn_subscribe]`**：放在任意页面，可用 `title` / `desc` 覆盖文案：
+**本插件不包含 UI。** 卡片由主题提供（Sakurairo 在首页底部渲染，样式跟主题一致），插件只提供数据与接口：
+
+- 主题通过 `psn_card_renderer` 过滤器注册自己的渲染函数；没装主题时插件什么都不渲染。
+- 卡片提交走 `admin-ajax.php?action=psn_subscribe`，返回 JSON 状态，页面不刷新；JS 不可用时原生 POST 兜底。
+- 短代码 `[psn_subscribe]` 复用主题的卡片模板，可用 `title` / `desc` 覆盖文案：
   ```
   [psn_subscribe title="订阅更新" desc="留下邮箱，新文章发布时通知你。"]
   ```
-- 表单是**纯服务端 POST → 302 回跳**，不依赖 JS、不依赖 nonce，所以页面被 W3TC / CDN 缓存、或主题 PJAX 只重放 `#app-js-before` 脚本时都不会失效。结果通过 `?psn_status=xxx` 白名单状态回显，不反射任何用户输入。
+- 确认邮件**异步发送**：提交后立刻返回，SMTP 在 `fastcgi_finish_request()` 之后进行，因此 SMTP 慢也不会卡住页面。
 
 ### 订阅状态机
 

@@ -526,6 +526,7 @@ function sakura_scripts()
             '/css/responsive.css',
             '/css/animation.css',
             '/css/templates.css',
+            '/css/subscribe-card.css',
             '/css/content-style/' . $content_style . '.css',
         ) as $iro_css_file) {
             $iro_css_mtime = @filemtime(get_template_directory() . $iro_css_file);
@@ -699,6 +700,7 @@ add_action("after_setup_theme",function(){
 require get_template_directory() . '/inc/decorate.php';
 require get_template_directory() . '/inc/swicher.php';
 require get_template_directory() . '/inc/api.php';
+require get_template_directory() . '/inc/post-subscribe-card.php';
 
 /**
  * Custom template tags for this theme.

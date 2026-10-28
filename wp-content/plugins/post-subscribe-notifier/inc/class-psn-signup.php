@@ -1,9 +1,18 @@
 <?php
 /**
- * 前台订阅：卡片渲染、表单处理、确认与退订端点。
+ * 前台订阅接口：AJAX 提交、确认与退订端点。
  *
- * 表单是纯服务端 POST → 302 回跳，不依赖 JS、不依赖 nonce，
- * 因此页面被 W3TC / CDN 缓存、以及主题 PJAX 只重放 #app-js-before 脚本时都不会失效。
+ * 本插件**不负责 UI**：卡片由 Sakurairo 主题在首页底部渲染（见主题
+ * `inc/post-subscribe-card.php`），样式也在主题 CSS 里，这样外观天然与主题一致。
+ * 插件只对外提供：
+ *
+ * - `POST admin-ajax.php?action=psn_subscribe` → JSON 状态（供卡片 JS 调用）；
+ * - `GET ?psn_confirm=TOKEN` → 确认订阅，302 回首页；
+ * - `GET ?psn_unsub=TOKEN&psn_uid=ID` → 退订二次确认；`POST psn_unsub_do=1` 执行退订；
+ * - 短代码 `[psn_subscribe]` → 渲染主题的卡片模板（供任意页面复用）。
+ *
+ * 保留服务端 POST → 302 的兜底路径：若客户端 JS 未执行（或 AJAX 失败），
+ * 直接提交表单也能完成订阅，只是会整页刷新。
  *
  * @package Post_Subscribe_Notifier
  */
@@ -18,6 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class PSN_Signup {
 
 	const FORM_ACTION = 'psn_subscribe';
+	const AJAX_ACTION = 'psn_subscribe';
 
 	/**
 	 * 同一 IP 10 分钟内允许的提交次数。
@@ -29,7 +39,7 @@ class PSN_Signup {
 	 *
 	 * @return string[]
 	 */
-	private static function status_keys() {
+	public static function status_keys() {
 		return array(
 			'pending',
 			'confirmed',
@@ -54,151 +64,103 @@ class PSN_Signup {
 	 */
 	public static function init() {
 		add_action( 'init', array( __CLASS__, 'handle_requests' ) );
-		add_action( 'get_footer', array( __CLASS__, 'render_home_card' ) );
-		add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
+		add_action( 'wp_ajax_' . self::AJAX_ACTION, array( __CLASS__, 'ajax_subscribe' ) );
+		add_action( 'wp_ajax_nopriv_' . self::AJAX_ACTION, array( __CLASS__, 'ajax_subscribe' ) );
+		add_action( 'shutdown', array( __CLASS__, 'flush_confirmations_after_response' ) );
 		add_shortcode( 'psn_subscribe', array( __CLASS__, 'shortcode' ) );
 	}
 
 	/**
-	 * 前台样式（只在需要时加载）。
+	 * 在响应发完之后再发确认邮件。
+	 *
+	 * 顺序很关键：AJAX / 原生提交都会入队一条 confirm 任务，然后立刻返回，
+	 * 用户马上看到「去邮箱确认」；真正的 SMTP 发送放在 shutdown 里，
+	 * 这样即使 SMTP 慢 10 秒也不会把请求卡住。
+	 *
+	 * 用 fastcgi_finish_request() 先把响应刷给客户端；FPM 之外（CLI、其他 SAPI）
+	 * 直接执行即可。
 	 *
 	 * @return void
 	 */
-	public static function enqueue_assets() {
-		$settings = PSN_Settings::get();
-
-		if ( empty( $settings['mail_enabled'] ) ) {
+	public static function flush_confirmations_after_response() {
+		if ( 0 === PSN_Queue::count( PSN_Queue::TYPE_CONFIRM, PSN_Queue::STATUS_PENDING ) ) {
 			return;
 		}
 
-		$needs = ( is_home() && ! is_paged() ) || ! empty( $GLOBALS['psn_shortcode_used'] );
-
-		// 表单提交后的落地页也要样式（提示条）。
-		if ( isset( $_GET['psn_status'] ) ) {
-			$needs = true;
+		// 把已经生成好的响应发给客户端，PHP 进程继续在后台跑。
+		if ( function_exists( 'fastcgi_finish_request' ) ) {
+			fastcgi_finish_request();
 		}
 
-		if ( ! $needs ) {
-			return;
-		}
+		@ignore_user_abort( true ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_ignore_user_abort
+		@set_time_limit( 30 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 
-		$path = PSN_DIR . 'assets/subscribe.css';
-
-		wp_enqueue_style(
-			'psn-subscribe',
-			PSN_URL . 'assets/subscribe.css',
-			array(),
-			@filemtime( $path ) ?: PSN_VERSION
-		);
+		PSN_Cron::dispatch_confirmations();
 	}
 
 	/**
-	 * 首页底部卡片。
-	 *
-	 * 挂在 get_footer：此时 #content 还没闭合，输出落在 #page 内，
-	 * 主题 PJAX 替换 #page 时会一起重建。
-	 *
-	 * @return void
-	 */
-	public static function render_home_card() {
-		if ( is_admin() || ! is_home() || is_paged() ) {
-			return;
-		}
-
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- 模板内部已转义。
-		echo self::card( 'home_card' );
-	}
-
-	/**
-	 * 短代码。
+	 * 短代码：直接复用主题的卡片模板。
 	 *
 	 * @param array $atts 属性.
 	 * @return string
 	 */
 	public static function shortcode( $atts = array() ) {
-		$atts = shortcode_atts(
-			array(
-				'title' => '',
-				'desc'  => '',
-			),
-			(array) $atts,
-			'psn_subscribe'
-		);
-
-		$GLOBALS['psn_shortcode_used'] = true;
-
-		return self::card( 'shortcode', $atts );
+		return self::render_card( 'shortcode', (array) $atts );
 	}
 
 	/**
-	 * 渲染卡片。
+	 * 渲染卡片：优先用主题模板，主题没提供时返回空串。
 	 *
 	 * @param string $source 来源标识.
-	 * @param array  $atts   覆盖标题/描述.
+	 * @param array  $args   模板参数.
 	 * @return string
 	 */
-	public static function card( $source = 'home_card', $atts = array() ) {
+	public static function render_card( $source = 'home_card', $args = array() ) {
 		$settings = PSN_Settings::get();
 
 		if ( empty( $settings['mail_enabled'] ) ) {
 			return '';
 		}
 
-		$status = self::current_status();
+		/**
+		 * 过滤卡片渲染函数。
+		 *
+		 * 主题注册一个返回卡片 HTML 的回调即可；插件本身不包含任何 UI。
+		 *
+		 * @param callable|null $renderer 渲染回调.
+		 * @param string        $source   来源.
+		 * @param array         $args     参数.
+		 */
+		$renderer = apply_filters( 'psn_card_renderer', null, $source, $args );
 
-		// 退订二次确认：只渲染确认条，不渲染表单。
-		if ( 'unsub_confirm' === $status ) {
-			return self::unsub_confirm_block();
+		if ( is_callable( $renderer ) ) {
+			return (string) call_user_func( $renderer, $source, $args );
 		}
 
-		$title = '' !== (string) ( $atts['title'] ?? '' ) ? (string) $atts['title'] : psn_t( 'card_title' );
-		$desc  = '' !== (string) ( $atts['desc'] ?? '' ) ? (string) $atts['desc'] : psn_t( 'card_desc' );
-
-		$notice = self::notice( $status );
-
-		// 主题色可能被封面提取成很浅的颜色，先算到满足对比度再输出。
-		$palette = PSN_Color::button_palette();
-
-		// 保留路径上的 query，避免回跳时丢掉别的参数（如分页）。
-		$action = esc_url( remove_query_arg( array( 'psn_status', 'psn_confirm', 'psn_unsub', 'psn_uid' ) ) );
-
-		$style = sprintf(
-			'--psn-accent:%1$s;--psn-on-accent:%2$s;--psn-ring:%3$s;',
-			esc_attr( $palette['accent'] ),
-			esc_attr( $palette['on_accent'] ),
-			esc_attr( $palette['ring'] )
-		);
-
-		$html  = '<section id="psn-subscribe" class="psn-card" data-source="' . esc_attr( $source ) . '" style="' . $style . '">';
-		$html .= '<div class="psn-card-inner">';
-		$html .= '<h2 class="psn-card-title">' . esc_html( $title ) . '</h2>';
-		$html .= '<p class="psn-card-desc">' . esc_html( $desc ) . '</p>';
-		$html .= $notice;
-		$html .= '<form class="psn-form" method="post" action="' . $action . '">';
-		$html .= '<input type="hidden" name="' . esc_attr( self::FORM_ACTION ) . '" value="1" />';
-		$html .= '<input type="hidden" name="psn_source" value="' . esc_attr( $source ) . '" />';
-		// 蜜罐：真人看不到也不会填，填了就是机器人。
-		$html .= '<div class="psn-honeypot" aria-hidden="true"><label>Website<input type="text" name="psn_website" value="" tabindex="-1" autocomplete="off" /></label></div>';
-		$html .= '<div class="psn-fields">';
-		$html .= '<label class="psn-field"><span class="psn-label">' . esc_html( psn_t( 'field_email' ) ) . '</span>';
-		$html .= '<input type="email" name="psn_email" class="psn-input" required maxlength="254" autocomplete="email" placeholder="you@example.com" /></label>';
-		$html .= '<label class="psn-field psn-field-name"><span class="psn-label">' . esc_html( psn_t( 'field_name' ) ) . '</span>';
-		$html .= '<input type="text" name="psn_name" class="psn-input" maxlength="100" autocomplete="nickname" placeholder="' . esc_attr( psn_current_lang() === 'zh' ? '可选' : 'optional' ) . '" /></label>';
-		$html .= '</div>';
-		$html .= '<button type="submit" class="psn-submit">' . esc_html( psn_t( 'btn_subscribe' ) ) . '</button>';
-		$html .= '</form>';
-		$html .= '</div>';
-		$html .= '</section>';
-
-		return $html;
+		return '';
 	}
 
 	/**
-	 * 当前展示的状态（只读 query，白名单校验）。
+	 * 卡片是否可用（主题提供了渲染器且模块已开启）。
+	 *
+	 * @return bool
+	 */
+	public static function card_available() {
+		$settings = PSN_Settings::get();
+
+		if ( empty( $settings['mail_enabled'] ) ) {
+			return false;
+		}
+
+		return is_callable( apply_filters( 'psn_card_renderer', null, '', array() ) );
+	}
+
+	/**
+	 * 当前状态（只读 query，白名单校验）。
 	 *
 	 * @return string
 	 */
-	private static function current_status() {
+	public static function current_status() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- 只读的白名单状态值。
 		$status = isset( $_GET['psn_status'] ) ? sanitize_key( wp_unslash( $_GET['psn_status'] ) ) : '';
 
@@ -206,66 +168,80 @@ class PSN_Signup {
 	}
 
 	/**
-	 * 状态提示条。
+	 * AJAX：提交订阅，返回 JSON。
 	 *
-	 * @param string $status 状态.
+	 * 复用 process_subscription() 的全部校验，只是把「302 回跳」换成 JSON。
+	 *
+	 * @return void
+	 */
+	public static function ajax_subscribe() {
+		$input = array(
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- 蜜罐 + 频率限制 + 二次确认替代 nonce。
+			'website' => isset( $_POST['psn_website'] ) ? (string) wp_unslash( $_POST['psn_website'] ) : '',
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'email'   => isset( $_POST['psn_email'] ) ? (string) wp_unslash( $_POST['psn_email'] ) : '',
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'name'    => isset( $_POST['psn_name'] ) ? (string) wp_unslash( $_POST['psn_name'] ) : '',
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'source'  => isset( $_POST['psn_source'] ) ? (string) wp_unslash( $_POST['psn_source'] ) : 'home_card',
+		);
+
+		$status = self::process_subscription( $input, self::ip_hash() );
+
+		wp_send_json_success(
+			array(
+				'status'  => $status,
+				'message' => self::status_message( $status ),
+				'ok'      => in_array( $status, array( 'pending', 'confirmed', 'already_active' ), true ),
+			)
+		);
+	}
+
+	/**
+	 * 状态对应的公开文案（AJAX 与模板共用）。
+	 *
+	 * @param string $status 状态键.
 	 * @return string
 	 */
-	private static function notice( $status ) {
-		if ( '' === $status || 'unsub_confirm' === $status ) {
-			return '';
-		}
-
+	public static function status_message( $status ) {
 		$map = array(
-			'pending'        => array( 'status_pending', 'is-info' ),
-			'confirmed'      => array( 'status_confirmed', 'is-success' ),
-			'invalid_email'  => array( 'status_invalid_email', 'is-error' ),
-			'already_active' => array( 'status_already_active', 'is-info' ),
-			'rate_limited'   => array( 'status_rate_limited', 'is-error' ),
-			'mail_failed'    => array( 'status_mail_failed', 'is-error' ),
-			'error'          => array( 'status_error', 'is-error' ),
-			'expired'        => array( 'status_expired', 'is-error' ),
-			'unknown_token'  => array( 'status_unknown_token', 'is-error' ),
-			'unsubscribed'   => array( 'status_unsubscribed', 'is-info' ),
-			'unsub_invalid'  => array( 'status_unsub_invalid', 'is-error' ),
-			'disabled'       => array( 'status_disabled', 'is-info' ),
+			'pending'        => 'status_pending',
+			'confirmed'      => 'status_confirmed',
+			'invalid_email'  => 'status_invalid_email',
+			'already_active' => 'status_already_active',
+			'rate_limited'   => 'status_rate_limited',
+			'mail_failed'    => 'status_mail_failed',
+			'error'          => 'status_error',
+			'expired'        => 'status_expired',
+			'unknown_token'  => 'status_unknown_token',
+			'unsubscribed'   => 'status_unsubscribed',
+			'unsub_invalid'  => 'status_unsub_invalid',
+			'disabled'       => 'status_disabled',
 		);
 
 		if ( ! isset( $map[ $status ] ) ) {
 			return '';
 		}
 
-		return '<p class="psn-notice ' . esc_attr( $map[ $status ][1] ) . '" role="status">' . esc_html( psn_t( $map[ $status ][0] ) ) . '</p>';
+		return psn_t( $map[ $status ] );
 	}
 
 	/**
-	 * 退订二次确认块（邮件客户端的一键退订走 POST，这里的 GET 走二次确认）。
+	 * 状态对应的语气（供前端决定颜色）。
 	 *
-	 * @return string
+	 * @param string $status 状态键.
+	 * @return string info|success|error
 	 */
-	private static function unsub_confirm_block() {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- token 本身即凭证。
-		$token = isset( $_GET['psn_unsub'] ) ? sanitize_text_field( wp_unslash( $_GET['psn_unsub'] ) ) : '';
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$uid = isset( $_GET['psn_uid'] ) ? (int) $_GET['psn_uid'] : 0;
-
-		$row = PSN_Subscribers::resolve_unsub_token( $uid, $token );
-		if ( ! $row ) {
-			return '<section id="psn-subscribe" class="psn-card"><div class="psn-card-inner">'
-				. '<p class="psn-notice is-error" role="status">' . esc_html( psn_t( 'status_unsub_invalid' ) ) . '</p>'
-				. '</div></section>';
+	public static function status_tone( $status ) {
+		if ( in_array( $status, array( 'confirmed' ), true ) ) {
+			return 'success';
 		}
 
-		$html  = '<section id="psn-subscribe" class="psn-card"><div class="psn-card-inner">';
-		$html .= '<h2 class="psn-card-title">' . esc_html( psn_t( 'status_unsub_confirm' ) ) . '</h2>';
-		$html .= '<form class="psn-form" method="post" action="' . esc_url( home_url( '/' ) ) . '">';
-		$html .= '<input type="hidden" name="psn_unsub_do" value="1" />';
-		$html .= '<input type="hidden" name="psn_unsub" value="' . esc_attr( $token ) . '" />';
-		$html .= '<input type="hidden" name="psn_uid" value="' . esc_attr( (string) $uid ) . '" />';
-		$html .= '<button type="submit" class="psn-submit psn-submit-danger">' . esc_html( psn_t( 'btn_unsubscribe_confirm' ) ) . '</button>';
-		$html .= '</form></div></section>';
+		if ( in_array( $status, array( 'pending', 'already_active', 'unsubscribed', 'disabled' ), true ) ) {
+			return 'info';
+		}
 
-		return $html;
+		return 'error';
 	}
 
 	/**
@@ -274,11 +250,13 @@ class PSN_Signup {
 	 * @return void
 	 */
 	public static function handle_requests() {
-		if ( is_admin() ) {
+		// AJAX 请求走 ajax_subscribe()，绝不能在这里 302：否则前端 fetch 会收到一段跳转，
+		// 表现为「提示为空 / 状态错乱」。这也防住了表单里 psn_subscribe=1 与 action 同名的误判。
+		if ( is_admin() || wp_doing_ajax() ) {
 			return;
 		}
 
-		// 新订阅（POST）。
+		// 兜底：JS 没跑起来时的原生表单提交。
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- 用蜜罐 + 频率限制 + 二次确认替代。
 		if ( isset( $_POST[ self::FORM_ACTION ] ) ) {
 			self::handle_subscribe();
@@ -403,7 +381,11 @@ class PSN_Signup {
 			return 'error';
 		}
 
-		return PSN_Mailer::send_confirmation( $email, $token, $name ) ? 'pending' : 'mail_failed';
+		// 发信走队列，不阻塞当前请求：SMTP 慢/失败时，用户也要立刻看到「去邮箱确认」。
+		// 任务在主请求结束后（fastcgi_finish_request 之后）由 shutdown 钩子发起一次投递。
+		PSN_Queue::enqueue_subscription_mail( (int) $result['id'] );
+
+		return 'pending';
 	}
 
 	/**

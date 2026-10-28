@@ -107,8 +107,46 @@ class PSN_Cron {
 	 * @return void
 	 */
 	public static function run_tick( $context = '' ) {
+		self::dispatch_confirmations();
 		self::dispatch_webhooks();
 		self::dispatch_mail();
+	}
+
+	/**
+	 * 发送待发的订阅确认邮件。
+	 *
+	 * 正常路径下这些任务在请求结束（响应已发出）后立刻被处理，
+	 * 这里的兜底用于 cron 补发极端情况下遗漏的任务。
+	 *
+	 * @return int 处理条数
+	 */
+	public static function dispatch_confirmations() {
+		$processed = 0;
+
+		while ( $processed < 10 ) {
+			$job = PSN_Queue::claim( PSN_Queue::TYPE_CONFIRM );
+
+			if ( ! $job ) {
+				break;
+			}
+
+			$processed++;
+
+			if ( PSN_Queue::deliver_confirmation( $job ) ) {
+				PSN_Queue::complete( (int) $job->id );
+			} else {
+				$attempts = (int) $job->attempts + 1;
+				PSN_Queue::fail(
+					(int) $job->id,
+					'确认邮件发送失败',
+					null,
+					$attempts < 3,
+					self::backoff( $attempts, 0 )
+				);
+			}
+		}
+
+		return $processed;
 	}
 
 	/**

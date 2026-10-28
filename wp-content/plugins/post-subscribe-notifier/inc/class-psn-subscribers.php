@@ -317,6 +317,40 @@ class PSN_Subscribers {
 	}
 
 	/**
+	 * 为待确认订阅者轮换一个新的确认 token（库里只存哈希）。
+	 *
+	 * 确认邮件改为异步发送后，明文 token 不再能跨请求传递，
+	 * 因此发信前现场生成一个新 token 并写回。
+	 *
+	 * @param object $row 订阅者行.
+	 * @return string 新的明文 token；失败返回空串
+	 */
+	public static function rotate_confirm_token( $row ) {
+		global $wpdb;
+
+		if ( ! is_object( $row ) || empty( $row->id ) ) {
+			return '';
+		}
+
+		$token   = self::new_token();
+		$ttl     = (int) PSN_Settings::get()['confirm_ttl'];
+		$expires = PSN_Queue::now( max( 1, $ttl ) * HOUR_IN_SECONDS );
+
+		$updated = $wpdb->update(
+			PSN_Install::subscribers_table(),
+			array(
+				'confirm_hash'  => self::hash( $token ),
+				'token_expires' => $expires,
+			),
+			array( 'id' => (int) $row->id ),
+			array( '%s', '%s' ),
+			array( '%d' )
+		);
+
+		return false === $updated || 0 === (int) $updated ? '' : $token;
+	}
+
+	/**
 	 * 用确认 token 激活订阅。
 	 *
 	 * @param string $token 明文 token.

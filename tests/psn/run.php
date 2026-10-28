@@ -203,6 +203,10 @@ psn_check( '蜜罐提交未写入订阅者', null === PSN_Subscribers::find_by_e
 // 3. 正常订阅。
 $status = PSN_Signup::process_subscription( array( 'email' => $test_email, 'name' => '测试订阅者', 'source' => 'home_card' ) );
 psn_eq( '新邮箱进入待确认', 'pending', $status );
+
+// 确认邮件现在是异步的（AJAX 不等 SMTP），测试里手动跑一次投递。
+psn_eq( '确认邮件已入队', 1, PSN_Queue::count( PSN_Queue::TYPE_CONFIRM ) );
+PSN_Cron::dispatch_confirmations();
 psn_eq( '发出 1 封验证邮件', 1, count( $GLOBALS['psn_test_mails'] ) );
 
 $row = PSN_Subscribers::find_by_email( $test_email );
@@ -258,6 +262,7 @@ $expired_email = 'psn-expired-' . wp_generate_password( 6, false ) . '@example.c
 PSN_Signup::reset_rate_limits( $expired_email );
 psn_reset_mail();
 PSN_Signup::process_subscription( array( 'email' => $expired_email ) );
+PSN_Cron::dispatch_confirmations();
 $expired_body = (string) ( $GLOBALS['psn_test_mails'][0]['message'] ?? '' );
 $expired_token = preg_match( '#psn_confirm=([a-f0-9]+)#', $expired_body, $m ) ? $m[1] : '';
 
@@ -295,6 +300,7 @@ $active_email = 'psn-active-' . wp_generate_password( 6, false ) . '@example.com
 PSN_Signup::reset_rate_limits( $active_email );
 psn_reset_mail();
 PSN_Signup::process_subscription( array( 'email' => $active_email ) );
+PSN_Cron::dispatch_confirmations();
 $active_body  = (string) ( $GLOBALS['psn_test_mails'][0]['message'] ?? '' );
 $active_token = preg_match( '#psn_confirm=([a-f0-9]+)#', $active_body, $m2 ) ? $m2[1] : '';
 if ( '' !== $active_token ) {
@@ -359,7 +365,9 @@ if ( $push_mail ) {
 }
 
 psn_eq( '推送完成后没有残留邮件任务', 0, PSN_Queue::count( PSN_Queue::TYPE_MAIL ) );
-psn_eq( '今日发送计数已累计', 1, PSN_Queue::sent_today() );
+
+// 此时库里只有一个 active 订阅者（$test_email 已退订），所以本轮应只发 1 封。
+psn_eq( '今日发送计数等于本轮封数', count( $GLOBALS['psn_test_mails'] ), PSN_Queue::sent_today() );
 
 // 12. 撤回文章会取消剩余任务。
 $post2 = wp_insert_post(

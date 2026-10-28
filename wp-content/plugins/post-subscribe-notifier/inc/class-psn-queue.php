@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class PSN_Queue {
 
 	const TYPE_MAIL    = 'mail';
+	const TYPE_CONFIRM = 'confirm';
 	const TYPE_WEBHOOK = 'webhook';
 
 	const STATUS_PENDING   = 'pending';
@@ -40,6 +41,88 @@ class PSN_Queue {
 		$timestamp = current_time( 'timestamp' ) + (int) $offset;
 
 		return gmdate( 'Y-m-d H:i:s', $timestamp );
+	}
+
+	/**
+	 * 把「发送订阅确认邮件」入队。
+	 *
+	 * 用户的表单请求不应该等 SMTP：SMTP 慢或超时会让页面卡住十几秒，
+	 * 用户以为没成功就会反复提交。入队后由 shutdown 钩子在响应发完之后投递。
+	 *
+	 * 同一订阅者只保留一条待发的确认任务（重复提交时替换旧的）。
+	 *
+	 * @param int $subscriber_id 订阅者 ID.
+	 * @return int 新增行数
+	 */
+	public static function enqueue_subscription_mail( $subscriber_id ) {
+		global $wpdb;
+
+		$subscriber_id = (int) $subscriber_id;
+		if ( $subscriber_id <= 0 ) {
+			return 0;
+		}
+
+		$table = PSN_Install::jobs_table();
+		$now   = self::now();
+
+		// 之前没发出的一律作废，避免用户重复提交时收到多封确认邮件。
+		$wpdb->query(
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"UPDATE {$table} SET status = %s, locked_until = NULL, updated_at = %s
+				WHERE type = %s AND ref = %d AND status IN (%s, %s)",
+				self::STATUS_CANCELLED,
+				$now,
+				self::TYPE_CONFIRM,
+				$subscriber_id,
+				self::STATUS_PENDING,
+				self::STATUS_FAILED
+			)
+		);
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$result = $wpdb->query(
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"INSERT INTO {$table} (type, ref, target, status, attempts, available_at, created_at, updated_at)
+				VALUES (%s, %d, '', %s, 0, %s, %s, %s)",
+				self::TYPE_CONFIRM,
+				$subscriber_id,
+				self::STATUS_PENDING,
+				$now,
+				$now,
+				$now
+			)
+		);
+
+		return (int) $result;
+	}
+
+	/**
+	 * 处理一条确认邮件任务。
+	 *
+	 * @param object $job 任务行.
+	 * @return bool 是否发送成功
+	 */
+	public static function deliver_confirmation( $job ) {
+		$subscriber = PSN_Subscribers::find( (int) $job->ref );
+
+		if ( ! $subscriber || PSN_Subscribers::STATUS_PENDING !== $subscriber->status ) {
+			return false;
+		}
+
+		// 确认 token 只在库里存哈希，无法还原；这里为待确认订阅者轮换一个新 token 再发信。
+		$token = PSN_Subscribers::rotate_confirm_token( $subscriber );
+
+		if ( '' === $token ) {
+			return false;
+		}
+
+		return PSN_Mailer::send_confirmation(
+			(string) $subscriber->email,
+			$token,
+			(string) $subscriber->name
+		);
 	}
 
 	/**
