@@ -1,0 +1,121 @@
+{
+  "cases": [
+    {
+      "name": "upyun edge with X-Real-IP wins over XFF chain",
+      "server": {
+        "REMOTE_ADDR": "36.150.185.23",
+        "HTTP_X_VIA": "shanks/0.11.13",
+        "HTTP_X_REAL_IP": "183.94.22.122",
+        "HTTP_CLIENT_IP": "183.94.22.122",
+        "HTTP_X_FORWARDED_FOR": "183.94.22.122"
+      },
+      "expect": { "ip": "183.94.22.122", "trusted": true, "source": "HTTP_X_REAL_IP" }
+    },
+    {
+      "name": "client-forged XFF through CDN is ignored while X-Real-IP is authoritative",
+      "server": {
+        "REMOTE_ADDR": "36.150.185.23",
+        "HTTP_X_VIA": "shanks/0.11.13",
+        "HTTP_X_REAL_IP": "183.94.22.122",
+        "HTTP_CLIENT_IP": "183.94.22.122",
+        "HTTP_X_FORWARDED_FOR": "1.2.3.4, 203.0.113.9"
+      },
+      "expect": { "ip": "183.94.22.122", "trusted": true, "source": "HTTP_X_REAL_IP" }
+    },
+    {
+      "name": "direct-to-origin forging X-Real-IP is rejected (no edge marker)",
+      "server": {
+        "REMOTE_ADDR": "183.94.22.129",
+        "HTTP_X_REAL_IP": "8.8.8.8",
+        "HTTP_X_FORWARDED_FOR": "1.2.3.4"
+      },
+      "expect": { "ip": "183.94.22.129", "trusted": false, "source": "REMOTE_ADDR" }
+    },
+    {
+      "name": "forged edge marker but mismatched X-Real-IP/Client-IP is rejected",
+      "server": {
+        "REMOTE_ADDR": "183.94.22.129",
+        "HTTP_X_VIA": "shanks/0.11.13",
+        "HTTP_X_REAL_IP": "8.8.8.8"
+      },
+      "expect": { "ip": "183.94.22.129", "trusted": false, "source": "REMOTE_ADDR" }
+    },
+    {
+      "name": "forged marker with matching private address is rejected",
+      "server": {
+        "REMOTE_ADDR": "183.94.22.129",
+        "HTTP_X_VIA": "shanks/0.11.13",
+        "HTTP_X_REAL_IP": "192.168.1.10",
+        "HTTP_CLIENT_IP": "192.168.1.10"
+      },
+      "expect": { "ip": "183.94.22.129", "trusted": false, "source": "REMOTE_ADDR" }
+    },
+    {
+      "name": "X-Real-IP with port is stripped",
+      "server": {
+        "REMOTE_ADDR": "36.150.185.24",
+        "HTTP_X_VIA": "shanks/0.11.13",
+        "HTTP_X_REAL_IP": "218.106.117.238:4805",
+        "HTTP_CLIENT_IP": "218.106.117.238:4805"
+      },
+      "expect": { "ip": "218.106.117.238", "trusted": true, "source": "HTTP_X_REAL_IP" }
+    },
+    {
+      "name": "IPv6 address is accepted",
+      "server": {
+        "REMOTE_ADDR": "36.150.185.25",
+        "HTTP_X_VIA": "shanks/0.11.13",
+        "HTTP_X_REAL_IP": "2001:db8::1",
+        "HTTP_CLIENT_IP": "2001:db8::1"
+      },
+      "expect": { "ip": "2001:db8::1", "trusted": true, "source": "HTTP_X_REAL_IP" }
+    },
+    {
+      "name": "no proxy headers at all falls back to REMOTE_ADDR",
+      "server": { "REMOTE_ADDR": "118.249.101.210" },
+      "expect": { "ip": "118.249.101.210", "trusted": false, "source": "REMOTE_ADDR" }
+    },
+    {
+      "name": "trusted cidr match accepts edge without marker header",
+      "server": {
+        "REMOTE_ADDR": "36.150.185.26",
+        "HTTP_X_REAL_IP": "175.2.58.1",
+        "HTTP_CLIENT_IP": "175.2.58.1"
+      },
+      "opts": { "trusted_cidrs": ["36.150.185.16/28"] },
+      "expect": { "ip": "175.2.58.1", "trusted": true, "source": "HTTP_X_REAL_IP" }
+    },
+    {
+      "name": "trusted cidr mismatch rejects forged headers",
+      "server": {
+        "REMOTE_ADDR": "183.94.22.129",
+        "HTTP_X_VIA": "shanks/0.11.13",
+        "HTTP_X_REAL_IP": "9.9.9.9",
+        "HTTP_CLIENT_IP": "9.9.9.9"
+      },
+      "opts": { "trusted_cidrs": ["36.150.185.16/28"] },
+      "expect": { "ip": "183.94.22.129", "trusted": false, "source": "REMOTE_ADDR" }
+    },
+    {
+      "name": "XFF-only fallback uses nearest hop",
+      "server": {
+        "REMOTE_ADDR": "36.150.185.27",
+        "HTTP_X_VIA": "shanks/0.11.13",
+        "HTTP_X_REAL_IP": "61.160.237.7",
+        "HTTP_CLIENT_IP": "61.160.237.7",
+        "HTTP_X_FORWARDED_FOR": "1.1.1.1, 61.160.237.7, 10.0.0.5"
+      },
+      "expect": { "ip": "61.160.237.7", "trusted": true, "source": "HTTP_X_REAL_IP" }
+    }
+  ],
+  "cidrCases": [
+    { "ip": "36.150.185.23", "cidrs": ["36.150.185.0/24"], "expect": true },
+    { "ip": "36.150.185.23", "cidrs": ["36.150.185.16/28"], "expect": true },
+    { "ip": "36.150.185.31", "cidrs": ["36.150.185.16/28"], "expect": true },
+    { "ip": "36.150.185.32", "cidrs": ["36.150.185.16/28"], "expect": false },
+    { "ip": "183.94.22.129", "cidrs": ["36.150.185.0/24"], "expect": false },
+    { "ip": "2001:db8::5", "cidrs": ["2001:db8::/32"], "expect": true },
+    { "ip": "2001:db9::5", "cidrs": ["2001:db8::/32"], "expect": false },
+    { "ip": "36.150.185.23", "cidrs": ["not-a-cidr"], "expect": false }
+  ]
+}
