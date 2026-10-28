@@ -55,6 +55,13 @@
 - **修复只作用于 PHP 层**：`/www/wwwlogs/blog.huajimc.cn.log` 里的 `$remote_addr` 记录的仍是回源节点 IP（nginx 在 PHP 之前就写完了日志）。排查访客来源要看 `$http_x_real_ip`，或者用下面那条临时探针；不要拿访问日志首列当真实访客 IP。
 - 回归测试：`php tests/run-ip.php`（纯函数，覆盖取值优先级、伪造拒绝、CIDR 匹配）与 `php tests/run-ip-wp.php`（走 WordPress 真实过滤器链，用 `IRO_EXPECT_IP` 指定期望值）。
 
+### IP 归属（评论「来自」）的数据源与失败处理
+
+- 展示数据存在 `wp_commentmeta.iro_ip_location`（序列化数组），首次展示时才查、查到即缓存；`save_location` 与 `comment_location` 均为 `1`。
+- 取源主用 **ipwho.is**（HTTPS、支持中文与 IPv6、实测源站 20/20 成功约 0.7s），兜底 ip-api.com（HTTP，实测约 40% 超时，超时压到 1.5s）。改数据源只需改 `IpLocation::getIpLocationFromIpWhois()` / `getIpLocationByIpApi()`，两者都要归一化成 `country/region/city`。
+- **不要把 `trigger_error(E_USER_WARNING)` 用在面向访客的代码路径上**：线上 php.ini 是 `display_errors=On`，而 `wp-config.php` 的 `WP_DEBUG=false` 使 WordPress 不执行 `ini_set('display_errors', 0)`，警告会被直接印在页面上（本项目已因此泄漏过 `IpLocation.php` 的 cURL 超时警告）。改用 `error_log()`。
+- 失败要区分「取源连不上」与「该 IP 查不到」：只有前者才开 10 分钟负缓存（`ip_location_outage`），否则一个查不到的 IP 会让全站位置查询停摆。状态常量见 `IpLocation::LOOKUP_*`，回归测试 `php tests/run-geo.php`（用假 HTTP 层，不联网）。
+
 ## 资源缓存失效与 PJAX 注意
 
 - 可变的前端资源（`katex-core.js`、`render.js` 等会被重构的文件）在输出 URL 时必须带上按文件修改时间生成的版本参数（`filemtime`），而不是固定的插件版本号常量。磁盘文件更新后若 `?ver` 不变，nginx/边缘缓存会对同一 URL 持续返回旧字节，导致线上加载到旧脚本；主题 `sakura_scripts` 的灯箱桥与 katex 插件的 `katex_asset_version()`（`scripts/resource.php`）均已按此处理，新增类似资源沿用同一做法。
