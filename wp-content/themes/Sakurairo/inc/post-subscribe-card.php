@@ -5,8 +5,8 @@
  * 这一块 UI 属于主题：样式写在 css/subscribe-card.css 并随 theme.css 一起拼接，
  * 因此改了样式 cb 参数会自动变化，不需要清缓存。
  *
- * 观感直接复刻主题自己的评论表单（h3#comments-list-title + .comment-respond）：
- * 标题带主题色高亮条，卡片是 15px 圆角的半透明玻璃面，输入框与提交按钮
+ * 观感直接复用主题自己的评论表单（.iro-section-title + .comment-respond）：
+ * 标题带主题色高亮条并共用悬停动画，卡片是 15px 圆角的半透明玻璃面，输入框与提交按钮
  * 沿用主题的 10px 圆角 / 45px 高度 / 主题色实底，暗色模式走主题的 --dark-* 变量。
  *
  * 插件的职责只是数据与接口（post-subscribe-notifier）：
@@ -69,7 +69,7 @@ function iro_psn_card_html( $source = 'home_card', $args = array() ) {
 
 	// 颜色一律交给主题：卡片 CSS 里直接用 --article-theme-highlight / --theme-skin-matching。
 	$html  = '<section id="psn-subscribe" class="psn-subscribe" data-source="' . esc_attr( $source ) . '">';
-	$html .= '<h2 class="psn-subscribe__title">' . esc_html( $title ) . '<span>' . esc_html__( 'Subscribe', 'sakurairo' ) . '</span></h2>';
+	$html .= '<h2 class="psn-subscribe__title iro-section-title">' . esc_html( $title ) . '<span>' . esc_html__( 'Subscribe', 'sakurairo' ) . '</span></h2>';
 	$html .= '<div class="psn-card" data-ajax="' . $ajax . '">';
 	$html .= '<p class="psn-card__desc">' . esc_html( $desc ) . '</p>';
 

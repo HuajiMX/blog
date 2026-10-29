@@ -1,8 +1,8 @@
 /*
  * 首页底部「订阅新文章」卡片。
  *
- * 观感直接复刻主题自己的评论区，不另起一套视觉：
- * - 标题：h3#comments-list-title 同款——主题色标题 + 半透明高亮条 + 灰色英文后缀；
+ * 观感复用主题自己的评论区，不另起一套视觉：
+ * - 标题：直接套 .iro-section-title——主题色标题 + 半透明高亮条 + 悬停展开 + 灰色后缀；
  * - 卡片：.comment-respond 同款——15px 圆角、1.5px 白描边、rgba(255,255,255,.5) 玻璃面，
  *   hover 提到 .8 并加深阴影；再叠主题在 header-info / 登录页用的背景模糊；
  * - 输入框：.comment-respond input 同款——10px 圆角、45px 高、白 .6 底、极浅投影；
@@ -23,38 +23,13 @@
   margin: 40px auto 24px;
 }
 
-/* 标题：与 h3#comments-list-title 同一套处理 ------------------------- */
+/* 标题：观感（高亮条、悬停动画、后缀）来自主题的 .iro-section-title，
+   这里只覆盖卡片里需要的间距与字号 */
 
 .psn-subscribe .psn-subscribe__title {
-  position: relative;
-  display: inline-block;
-  width: fit-content;
   margin: 0 0 16px;
   font-size: 20px;
   font-weight: 600;
-  line-height: 1.5;
-  color: var(--theme-skin, #505050);
-}
-
-.psn-subscribe__title::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 15%;
-  width: 70%;
-  height: 0.7em;
-  z-index: 0;
-  background-color: var(--psn-accent) !important;
-  border-radius: 30px;
-  opacity: 0.4;
-}
-
-.psn-subscribe__title span {
-  margin-left: 10px;
-  font-size: 13px;
-  font-weight: var(--global-font-weight, 400);
-  letter-spacing: 0.04em;
-  color: #909090;
 }
 
 /* 卡片：与 .comment-respond 同一套表面 ------------------------------ */
@@ -272,14 +247,14 @@
 
 /* 暗色模式：只用主题的 --dark-* 变量 --------------------------------- */
 
-body.dark .psn-subscribe__title {
-  color: var(--dark-text-primary);
+/* 深色下高亮条改用主题的暗色肤色，透明度沿用共享的悬停变量，动画不受影响 */
+body.dark .psn-subscribe .psn-subscribe__title {
+  --title-hl-opacity: 0.55;
+  --title-hl-opacity-hover: 0.75;
 }
 
-/* 深色下高亮条改用主题的暗色肤色，浅肤色在深底上会盖住标题 */
 body.dark .psn-subscribe__title::after {
   background-color: var(--psn-accent-dark) !important;
-  opacity: 0.55;
 }
 
 body.dark .psn-card {

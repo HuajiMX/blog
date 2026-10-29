@@ -439,7 +439,7 @@ body.dark .pattern-center h1.entry-title {
 
 /* 旧的展示区样式已移除 */
 
-body.dark h3#comments-list-title{
+body.dark .iro-section-title{
   color: var(--dark-text-primary);
 }
 

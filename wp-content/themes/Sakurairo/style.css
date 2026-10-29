@@ -1722,18 +1722,18 @@ h1.page-title {
   background-size: auto 100%;
 }
 
-h3#comments-list-title {
-  max-width: 860px;
+/* 通用小节标题：主题色标题 + 底部半透明高亮条，悬停时高亮条展开 */
+.iro-section-title {
+  position: relative;
+  display: inline-block;
   width: fit-content;
-  margin: 30px auto;
   color: var(--theme-skin);
   font-weight: 600;
   font-size: 20px;
-  position: relative;
-  display: inline-block;
+  line-height: 1.5;
 }
 
-h3#comments-list-title::after {
+.iro-section-title::after {
 	content: '';
 	position: absolute;
 	bottom: -2px;
@@ -1741,15 +1741,21 @@ h3#comments-list-title::after {
 	width: 70%;
 	height: 0.7em;
 	background-color: var(--article-theme-highlight,var(--theme-skin-matching)) !important;
-	opacity: 0.4;
+	opacity: var(--title-hl-opacity, 0.4);
 	z-index: 0;
 	border-radius: 30px;
 	transition: all 0.3s ease;
 }
 
-h3#comments-list-title:hover::after {
+.iro-section-title:hover::after {
 	width: 85%;
-	opacity: 0.7;
+	opacity: var(--title-hl-opacity-hover, 0.7);
+}
+
+/* 评论区标题的位置由 ID 决定，观感在 .iro-section-title 里 */
+h3#comments-list-title {
+  max-width: 860px;
+  margin: 30px auto;
 }
 
 .butterBar {
@@ -4638,7 +4644,7 @@ h1.page-title.mb- {
   color: #7d7d7d;
 }
 
-#comments-list-title span {
+.iro-section-title span {
   font-size: 13px;
   color: #909090;
   margin-left: 10px;
