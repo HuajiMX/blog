@@ -19,6 +19,13 @@ class PSN_Cron {
 	const SCHEDULE     = 'psn_minute';
 
 	/**
+	 * 当前请求是否已经排了「响应发出后立刻投递」的动作。
+	 *
+	 * @var bool
+	 */
+	private static $flush_scheduled = false;
+
+	/**
 	 * 挂载钩子。
 	 *
 	 * @return void
@@ -32,6 +39,62 @@ class PSN_Cron {
 		// wp_schedule_event 会因为间隔未知而失败，这里在正常请求里补上。
 		if ( ! wp_next_scheduled( self::HOOK_TICK ) || ! wp_next_scheduled( self::HOOK_CLEANUP ) ) {
 			self::schedule();
+		}
+	}
+
+	/**
+	 * 让「当前这次请求」在响应发完之后立刻投递一次队列。
+	 *
+	 * 为什么不直接同步发：发 WebHook 要一次外部 HTTP 往返，
+	 * 放在评论提交的请求里会让访客多等 1 秒以上，失败时更久。
+	 * 用 fastcgi_finish_request() 先把响应刷给客户端，PHP 进程再继续干活。
+	 *
+	 * 这样评论 WebHook 不再依赖 wp-cron 的调度（wp-cron 只靠访问触发，
+	 * 低流量时可能几分钟才跑，实测出现过 9.5 分钟延迟）。
+	 *
+	 * 钩子按需注册：只有真的入队了任务才挂 shutdown，
+	 * 避免每个普通页面请求都多跑两条 COUNT 查询。
+	 *
+	 * @return void
+	 */
+	public static function request_flush() {
+		if ( self::$flush_scheduled ) {
+			return;
+		}
+
+		self::$flush_scheduled = true;
+
+		add_action( 'shutdown', array( __CLASS__, 'flush_after_response' ), 999 );
+	}
+
+	/**
+	 * shutdown 时投递待发任务。
+	 *
+	 * @return void
+	 */
+	public static function flush_after_response() {
+		$pending_webhook   = PSN_Queue::count( PSN_Queue::TYPE_WEBHOOK );
+		$pending_confirm   = PSN_Queue::count( PSN_Queue::TYPE_CONFIRM );
+
+		if ( $pending_webhook <= 0 && $pending_confirm <= 0 ) {
+			return;
+		}
+
+		// 先把已生成的响应发给客户端，PHP 进程继续在后台跑。
+		// FPM 之外（CLI、其他 SAPI）没有这个函数，直接执行即可。
+		if ( function_exists( 'fastcgi_finish_request' ) ) {
+			@fastcgi_finish_request(); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		}
+
+		@ignore_user_abort( true ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		@set_time_limit( 30 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+
+		if ( $pending_confirm > 0 ) {
+			self::dispatch_confirmations();
+		}
+
+		if ( $pending_webhook > 0 ) {
+			self::dispatch_webhooks();
 		}
 	}
 

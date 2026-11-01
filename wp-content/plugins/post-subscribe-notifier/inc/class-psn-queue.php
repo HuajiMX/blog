@@ -95,7 +95,14 @@ class PSN_Queue {
 			)
 		);
 
-		return (int) $result;
+		$added = (int) $result;
+
+		if ( $added > 0 ) {
+			// 订阅表单同样不等 cron：响应发完后立刻发确认邮件。
+			PSN_Cron::request_flush();
+		}
+
+		return $added;
 	}
 
 	/**
@@ -217,7 +224,9 @@ class PSN_Queue {
 
 		$added = (int) $result;
 		if ( $added > 0 ) {
-			PSN_Cron::schedule_tick_soon();
+			// 评论事件不经 cron：本次请求的响应发完之后立刻投递。
+			// wp-cron 只靠访问触发，低流量时实测被拖到 9.5 分钟后才发出。
+			PSN_Cron::request_flush();
 		}
 
 		return $added;

@@ -66,36 +66,7 @@ class PSN_Signup {
 		add_action( 'init', array( __CLASS__, 'handle_requests' ) );
 		add_action( 'wp_ajax_' . self::AJAX_ACTION, array( __CLASS__, 'ajax_subscribe' ) );
 		add_action( 'wp_ajax_nopriv_' . self::AJAX_ACTION, array( __CLASS__, 'ajax_subscribe' ) );
-		add_action( 'shutdown', array( __CLASS__, 'flush_confirmations_after_response' ) );
 		add_shortcode( 'psn_subscribe', array( __CLASS__, 'shortcode' ) );
-	}
-
-	/**
-	 * 在响应发完之后再发确认邮件。
-	 *
-	 * 顺序很关键：AJAX / 原生提交都会入队一条 confirm 任务，然后立刻返回，
-	 * 用户马上看到「去邮箱确认」；真正的 SMTP 发送放在 shutdown 里，
-	 * 这样即使 SMTP 慢 10 秒也不会把请求卡住。
-	 *
-	 * 用 fastcgi_finish_request() 先把响应刷给客户端；FPM 之外（CLI、其他 SAPI）
-	 * 直接执行即可。
-	 *
-	 * @return void
-	 */
-	public static function flush_confirmations_after_response() {
-		if ( 0 === PSN_Queue::count( PSN_Queue::TYPE_CONFIRM, PSN_Queue::STATUS_PENDING ) ) {
-			return;
-		}
-
-		// 把已经生成好的响应发给客户端，PHP 进程继续在后台跑。
-		if ( function_exists( 'fastcgi_finish_request' ) ) {
-			fastcgi_finish_request();
-		}
-
-		@ignore_user_abort( true ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_ignore_user_abort
-		@set_time_limit( 30 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-
-		PSN_Cron::dispatch_confirmations();
 	}
 
 	/**
