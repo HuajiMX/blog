@@ -6823,7 +6823,7 @@ a.toc-link {
   font-size: 14px;
   font-weight: 400;
   line-height: 1.4;
-  color: var(--theme-skin, #505050);
+  color: var(--theme-skin-matching, #a4cdf6);
   text-decoration: none;
   background: none;
   border: 0;
@@ -6844,11 +6844,6 @@ a.toc-link {
 
 .iro-shuoshuo-link:hover {
   color: var(--theme-skin-dark, #294aa4);
-}
-
-.iro-shuoshuo-link:hover .iro-shuoshuo-link-text {
-  text-decoration: underline;
-  text-underline-offset: 4px;
 }
 
 .iro-shuoshuo-link:hover .iro-shuoshuo-arrow {
