@@ -988,12 +988,13 @@ body.dark .bento-item:hover {
 
 /* 说说入口（首页列表标题行） */
 body.dark .iro-shuoshuo-link {
-  color: var(--theme-skin-dark, #294aa4);
+  color: rgba(255, 255, 255, .82);
 }
 
 body.dark .iro-shuoshuo-link:hover,
-body.dark .iro-shuoshuo-link:active {
-  color: var(--theme-skin-matching, #a4cdf6);
+body.dark .iro-shuoshuo-link:active,
+body.dark .iro-shuoshuo-link:focus-visible {
+  color: var(--theme-skin-dark, #294aa4) !important;
 }
 
 body.dark .mo-shuoshuo-entry .mo-shuoshuo-entry-label {

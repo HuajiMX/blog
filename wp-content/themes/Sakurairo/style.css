@@ -6810,8 +6810,8 @@ a.toc-link {
 
 /* ------------------------------------------------------------------
  * 说说入口
- * 1) 首页文章列表标题行右侧：纯文字链，不新增容器
- * 2) 移动端抽屉底部：带图标与分隔线的独立一栏
+ * 1) 首页文章列表标题行右侧：纯文字链，不新增容器；常态用正文色，hover/active 转主题色
+ * 2) 移动端抽屉底部：与菜单项同款，用「更多」分组小标题归类
  * ------------------------------------------------------------------ */
 .iro-shuoshuo-link {
   margin-left: auto;
@@ -6823,7 +6823,7 @@ a.toc-link {
   font-size: 14px;
   font-weight: 400;
   line-height: 1.4;
-  color: var(--theme-skin-matching, #a4cdf6);
+  color: var(--theme-skin, #505050);
   text-decoration: none;
   background: none;
   border: 0;
@@ -6842,16 +6842,15 @@ a.toc-link {
   transition: transform .25s ease;
 }
 
-.iro-shuoshuo-link:hover {
-  color: var(--theme-skin-dark, #294aa4);
+.iro-shuoshuo-link:hover,
+.iro-shuoshuo-link:active,
+.iro-shuoshuo-link:focus-visible {
+  color: var(--theme-skin-matching, #a4cdf6);
+  text-decoration: none;
 }
 
 .iro-shuoshuo-link:hover .iro-shuoshuo-arrow {
   transform: translateX(2px);
-}
-
-.iro-shuoshuo-link:active {
-  color: var(--theme-skin-dark, #294aa4);
 }
 
 .iro-shuoshuo-link:focus-visible {
