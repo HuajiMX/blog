@@ -985,3 +985,17 @@ body.dark .bento-item:hover {
     0 1px 3px rgba(0, 0, 0, 0.3),
     inset 0 0 0 1px rgba(255, 255, 255, 0.07);
 }
+
+/* 说说入口（首页列表标题行 / 移动端抽屉底部） */
+body.dark .iro-shuoshuo-link {
+  color: rgba(255, 255, 255, .82);
+}
+
+body.dark .iro-shuoshuo-link:hover,
+body.dark .iro-shuoshuo-link:active {
+  color: #fff;
+}
+
+body.dark .mo-shuoshuo-entry .mo-shuoshuo-entry-label {
+  color: rgba(255, 255, 255, .4);
+}

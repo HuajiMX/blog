@@ -16,7 +16,11 @@ get_header(); ?>
 		<?php
 		if (have_posts()) : ?>
 
-			<?php if (!iro_opt('patternimg') || !z_taxonomy_image_url()) { ?>
+			<?php if (is_post_type_archive()) : ?>
+				<header class="page-header">
+					<h1 class="cat-title"><?php echo esc_html(post_type_archive_title('', false)); ?></h1>
+				</header><!-- .page-header -->
+			<?php elseif (!iro_opt('patternimg') || !z_taxonomy_image_url()) : ?>
 				<header class="page-header">
 					<h1 class="cat-title"><?php single_cat_title('', true); ?></h1>
 					<span class="cat-des">
@@ -27,7 +31,7 @@ get_header(); ?>
 						?>
 					</span>
 				</header><!-- .page-header -->
-			<?php } // page-header 
+			<?php endif; // page-header 
 			// TODO： 'image_category'功能待实现
 			while (have_posts()) : the_post();
 				get_template_part('tpl/content', 'thumbcard');

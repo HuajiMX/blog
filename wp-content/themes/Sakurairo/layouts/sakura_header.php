@@ -84,6 +84,8 @@ $show_user_avatar = (bool)iro_opt('nav_user_menu',true);
             'container_class' => 'mo_nav_item',
             'walker' => new Iro_mo_nav(),
             ]); ?>
+
+  <?php iro_shuoshuo_drawer_item(); ?>
   </div>
   <?php //移动端结构结束 ?>
 

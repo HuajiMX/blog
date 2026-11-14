@@ -317,6 +317,62 @@ function register_shuoshuo_post_type() {
 }
 add_action('init', 'register_shuoshuo_post_type');
 
+/**
+ * 说说归档地址；未注册或没有归档时返回空字符串。
+ *
+ * 站点 permalink 前缀是 /index.php/，不能写死 /shuoshuo。
+ */
+function iro_shuoshuo_archive_url() {
+    $url = get_post_type_archive_link('shuoshuo');
+    return $url ? $url : '';
+}
+
+/**
+ * 首页列表标题行右侧的「说说」入口。
+ *
+ * 放在 h1.main-title 里（该标题是 flex 容器），靠 margin-left:auto 顶到右端，
+ * 不新增任何容器。
+ */
+function iro_shuoshuo_title_link() {
+    $url = iro_shuoshuo_archive_url();
+    if (!$url) {
+        return;
+    }
+    $label = _x('Shuoshuo', 'post type general name', 'sakurairo');
+    ?>
+    <a class="iro-shuoshuo-link" href="<?php echo esc_url($url); ?>">
+        <i class="fa-regular fa-message" aria-hidden="true"></i>
+        <span class="iro-shuoshuo-link-text"><?php echo esc_html($label); ?></span>
+        <i class="fa-solid fa-angle-right iro-shuoshuo-arrow" aria-hidden="true"></i>
+    </a>
+    <?php
+}
+
+/**
+ * 移动端抽屉底部的「说说」入口。
+ *
+ * 抽屉里的条目都是 1px 分隔的同一套样式，这里用一个分组小标题把它归到
+ * 「更多」分组（Material nav drawer / iOS 表单分组的常见做法），
+ * 不再用加粗边框硬切。
+ */
+function iro_shuoshuo_drawer_item() {
+    $url = iro_shuoshuo_archive_url();
+    if (!$url) {
+        return;
+    }
+    $label = _x('Shuoshuo', 'post type general name', 'sakurairo');
+    ?>
+    <div class="mo-shuoshuo-entry">
+        <span class="mo-shuoshuo-entry-label"><?php echo esc_html__('更多', 'sakurairo'); ?></span>
+        <ul class="menu">
+            <li class="mo-shuoshuo-item">
+                <a href="<?php echo esc_url($url); ?>"><?php echo esc_html($label); ?></a>
+            </li>
+        </ul>
+    </div>
+    <?php
+}
+
 function register_emotion_meta_boxes() {
     register_meta('post', 'emotion', array(
         'show_in_rest' => true,
@@ -458,6 +514,9 @@ function customize_query_functions($query) {
             //index引用content-thumb，其中根据设置项决定是否在主页排除说说
             $post_types = array('post','shuoshuo');
             $query->set('post_type', $post_types);
+        } elseif (is_post_type_archive('shuoshuo')) {
+            // 说说归档只列说说，否则会被下面的通用归档分支扩展成「文章 + 说说」
+            $query->set('post_type', 'shuoshuo');
         } elseif (is_archive() || is_category() || is_author()) {
             // 保持其他页面的原有逻辑
             $query->set('post_type', array('post', 'shuoshuo'));

@@ -6807,3 +6807,92 @@ a.toc-link {
 .toc .katex {
   font-size: 1em;
 }
+
+/* ------------------------------------------------------------------
+ * 说说入口
+ * 1) 首页文章列表标题行右侧：纯文字链，不新增容器
+ * 2) 移动端抽屉底部：带图标与分隔线的独立一栏
+ * ------------------------------------------------------------------ */
+.iro-shuoshuo-link {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 4px 2px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: var(--theme-skin, #505050);
+  text-decoration: none;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  transition: color .25s ease;
+}
+
+.iro-shuoshuo-link i {
+  font-size: 15px;
+  color: inherit;
+}
+
+.iro-shuoshuo-link .iro-shuoshuo-arrow {
+  font-size: 12px;
+  transition: transform .25s ease;
+}
+
+.iro-shuoshuo-link:hover {
+  color: var(--theme-skin-dark, #294aa4);
+}
+
+.iro-shuoshuo-link:hover .iro-shuoshuo-link-text {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.iro-shuoshuo-link:hover .iro-shuoshuo-arrow {
+  transform: translateX(2px);
+}
+
+.iro-shuoshuo-link:active {
+  color: var(--theme-skin-dark, #294aa4);
+}
+
+.iro-shuoshuo-link:focus-visible {
+  outline: 2px solid var(--theme-skin-matching, #a4cdf6);
+  outline-offset: 2px;
+}
+
+/* 移动端抽屉底部：与上面菜单项同一套样式，用分组小标题归到「更多」分组 */
+.mo-shuoshuo-entry {
+  margin-top: 14px;
+}
+
+.mo-shuoshuo-entry .menu {
+  padding: 0;
+  margin: 0;
+}
+
+.mo-shuoshuo-entry .mo-shuoshuo-entry-label {
+  display: block;
+  padding: 0 20px 2px;
+  font-size: 12px;
+  line-height: 1.5;
+  letter-spacing: .06em;
+  color: rgba(0, 0, 0, .38);
+}
+
+.mobile-nav .mo-shuoshuo-entry .menu > li {
+  border-top: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iro-shuoshuo-link,
+  .iro-shuoshuo-link .iro-shuoshuo-arrow {
+    transition: none;
+  }
+  .iro-shuoshuo-link:hover .iro-shuoshuo-arrow {
+    transform: none;
+  }
+}
